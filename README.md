@@ -1,5 +1,20 @@
 # Electronic Clinic
 
+
+## Cách chạy nhanh:
+
+
+## Compile:
+javac -encoding UTF-8 -d target/classes src/main/java/com/eclinic/*.java
+
+## Run
+java -cp target/classes com.eclinic.App
+
+## One-command run on Windows PowerShell
+```powershell
+.\run-backend.ps1
+```
+
 ## Mục tiêu
 
 Demo Factory Method Design Pattern cho use case **Create User** trong hệ thống Electronic Clinic.
@@ -111,24 +126,28 @@ src/main/java/com/eclinic/
     └── PatientRecord.java
 ```
 
-## Cách chạy
+## Cách chạy backend độc lập
 
-### Run script (PowerShell, chuẩn với workspace hiện tại)
+Backend Java là một HTTP server chạy riêng, không phụ thuộc vào frontend.
+
+### PowerShell
 
 ```powershell
 cd "f:\2026CodingStuff\Electronic-Clinic"
-
-# Tạo thư mục output nếu chưa có
-if (!(Test-Path "target/classes")) {
-    New-Item -ItemType Directory -Path "target/classes" | Out-Null
-}
-
-# Compile vào target/classes (không làm rác src/main/java/com/eclinic)
-javac -encoding UTF-8 -d target/classes src/main/java/com/eclinic/*.java
-
-# Run app
-java -cp target/classes com.eclinic.App
+.\run-backend.ps1
 ```
+
+Khi chạy xong, backend sẽ lắng nghe tại `http://localhost:8080`.
+
+Nếu bạn đang chạy trong PowerShell của máy này, `javac` hiện tại là bản cũ nhưng vẫn đủ để build code hiện tại. Nếu một máy khác có JDK mới hơn, backend vẫn chạy bình thường sau khi compile.
+
+### Kiểm tra backend
+
+```powershell
+Invoke-WebRequest http://localhost:8080/api/health
+```
+
+Nếu backend chạy đúng, response sẽ trả về JSON `{"status":"ok"}`.
 
 Ghi chú: không chạy `javac App.java` bên trong `src/main/java/com/eclinic`, vì cách đó sẽ sinh `.class` trực tiếp trong thư mục source.
 
@@ -137,6 +156,8 @@ Ghi chú: không chạy `javac App.java` bên trong `src/main/java/com/eclinic`,
 Ngoài bản Java console demo, bạn có thể mở frontend tĩnh tại [frontend/index.html](frontend/index.html) để xem Factory Method theo dạng giao diện người dùng.
 
 Giao diện frontend hiện đã được chuyển sang tiếng Việt.
+
+Frontend này chỉ là client gọi vào backend đang chạy sẵn. Bạn có thể mở nó sau khi backend đã bật.
 
 Frontend này cho phép:
 

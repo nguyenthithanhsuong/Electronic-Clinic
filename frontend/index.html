@@ -42,7 +42,7 @@
             <span class="panel-label">Tạo user</span>
             <h2>Bảng điều khiển admin</h2>
           </div>
-          <div class="badge">Connected Backend</div>
+          <div class="badge disconnected" id="backendStatus">Disconnected Backend</div>
         </div>
 
         <form id="userForm" class="form">
@@ -53,12 +53,12 @@
 
           <label>
             Họ và tên
-            <input id="fullName" type="text" placeholder="BS. Nguyễn Văn A" required />
+            <input id="fullName" type="text" placeholder="" required />
           </label>
 
           <label id="dynamicLabel">
             Chuyên khoa
-            <input id="specialtyOrCondition" type="text" placeholder="Tim mạch" required />
+            <input id="specialtyOrCondition" type="text" placeholder="" required />
           </label>
 
           <button type="submit" class="primary-btn">Tạo tài khoản</button>
@@ -98,6 +98,17 @@
               <strong>Đã lưu</strong>
             </div>
           </div>
+        </div>
+
+        <div class="log-card">
+          <div class="log-header">
+            <div>
+              <div class="table-title">Log</div>
+              <h3>Factory Method trace</h3>
+            </div>
+            <div class="log-count" id="logCount">0 dòng</div>
+          </div>
+          <div class="log-list" id="logList" aria-live="polite"></div>
         </div>
 
         <div class="tables">

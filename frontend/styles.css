@@ -171,6 +171,12 @@ label {
   white-space: nowrap;
 }
 
+.badge.disconnected {
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--danger);
+  border-color: rgba(255, 107, 107, 0.28);
+}
+
 .badge.ghost {
   background: rgba(255, 255, 255, 0.04);
   color: var(--accent-2);
@@ -319,6 +325,83 @@ input:focus {
 
 .table-box strong {
   color: var(--text);
+}
+
+.log-card {
+  margin-bottom: 18px;
+  border-radius: 24px;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: linear-gradient(180deg, rgba(8, 15, 28, 0.92), rgba(9, 18, 35, 0.82));
+}
+
+.log-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.log-header h3 {
+  margin: 6px 0 0;
+  font-size: 1.05rem;
+}
+
+.log-count {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent-2);
+  border: 1px solid rgba(255, 180, 84, 0.18);
+  white-space: nowrap;
+}
+
+.log-list {
+  display: grid;
+  gap: 10px;
+}
+
+.log-empty {
+  color: var(--muted);
+  font-size: 0.94rem;
+  padding: 10px 0 4px;
+}
+
+.log-item {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.log-item.info {
+  border-color: rgba(57, 208, 197, 0.18);
+}
+
+.log-item.success {
+  border-color: rgba(57, 208, 197, 0.35);
+  background: rgba(57, 208, 197, 0.08);
+}
+
+.log-item.error {
+  border-color: rgba(255, 107, 107, 0.38);
+  background: rgba(255, 107, 107, 0.08);
+}
+
+.log-time {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.log-message {
+  color: var(--text);
+  line-height: 1.45;
 }
 
 .tables {

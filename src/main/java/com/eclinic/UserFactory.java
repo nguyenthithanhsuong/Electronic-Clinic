@@ -25,7 +25,7 @@ abstract class User {
     public abstract String getRole();
 
     public void saveProfile() {
-        database.getUsers().add(new UserRecord(id, fullName, getRole()));
+        database.addUserRecord(new UserRecord(id, fullName, getRole()));
         saveRoleProfile(database);
     }
 
@@ -76,7 +76,7 @@ final class DoctorUser extends User {
 
     @Override
     protected void saveRoleProfile(Database database) {
-        database.getDoctors().add(new DoctorRecord(getId(), specialty));
+        database.addDoctorRecord(new DoctorRecord(getId(), specialty));
         System.out.println("Saved to Users and Doctor tables.");
     }
 
@@ -119,7 +119,7 @@ final class PatientUser extends User {
 
     @Override
     protected void saveRoleProfile(Database database) {
-        database.getPatients().add(new PatientRecord(getId(), medicalCondition));
+        database.addPatientRecord(new PatientRecord(getId(), medicalCondition));
         System.out.println("Saved to Users and Patient tables.");
     }
 

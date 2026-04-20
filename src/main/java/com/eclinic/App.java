@@ -26,8 +26,8 @@ public class App {
         final ExecutorService executor = Executors.newFixedThreadPool(4);
         ServerSocket serverSocket = new ServerSocket(PORT);
 
-        System.out.println("Electronic Clinic API is running at http://localhost:" + PORT);
-        System.out.println("Open frontend/index.html and it will call this API.");
+        System.out.println("Electronic Clinic API dang chay tao http://localhost:" + PORT);
+        System.out.println("Mo frontend/index.html va no se goi API nay.");
 
         while (true) {
             final Socket socket = serverSocket.accept();

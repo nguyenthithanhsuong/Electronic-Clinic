@@ -3,6 +3,7 @@ const API_BASE = 'http://localhost:8080/api';
 const state = {
   users: [],
   details: [],
+  logs: [],
 };
 
 const form = document.getElementById('userForm');
@@ -15,11 +16,60 @@ const resultId = document.getElementById('resultId');
 const resultName = document.getElementById('resultName');
 const resultMeta = document.getElementById('resultMeta');
 const secondaryTableLabel = document.getElementById('secondaryTableLabel');
+const backendStatus = document.getElementById('backendStatus');
+const logList = document.getElementById('logList');
+const logCount = document.getElementById('logCount');
 const usersTable = document.getElementById('usersTable');
 const detailTable = document.getElementById('detailTable');
 const steps = document.querySelectorAll('#steps li');
 
 let selectedRole = 'Doctor';
+
+function formatTime(date) {
+  return date.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+}
+
+function renderLogs() {
+  logCount.textContent = `${state.logs.length} dòng`;
+
+  if (state.logs.length === 0) {
+    logList.innerHTML = '<div class="log-empty">Chưa có log nào.</div>';
+    return;
+  }
+
+  logList.innerHTML = state.logs
+    .map((entry) => `
+      <div class="log-item ${entry.tone}">
+        <span class="log-time">${entry.time}</span>
+        <span class="log-message">${entry.message}</span>
+      </div>
+    `)
+    .join('');
+}
+
+function addLog(message, tone) {
+  state.logs.unshift({
+    message,
+    tone: tone || 'info',
+    time: formatTime(new Date()),
+  });
+
+  if (state.logs.length > 8) {
+    state.logs.length = 8;
+  }
+
+  renderLogs();
+}
+
+function updateBackendStatus(isConnected) {
+  backendStatus.textContent = isConnected ? 'Connected Backend' : 'Disconnected Backend';
+  backendStatus.classList.toggle('disconnected', !isConnected);
+}
 
 async function fetchSnapshot() {
   const response = await fetch(`${API_BASE}/snapshot`);
@@ -51,7 +101,7 @@ async function registerUser(formData) {
   return result;
 }
 
-function updateRoleUI(role) {
+function updateRoleUI(role, shouldLog) {
   selectedRole = role;
 
   roleButtons.forEach((button) => {
@@ -60,14 +110,18 @@ function updateRoleUI(role) {
 
   if (role === 'Doctor') {
     dynamicLabel.firstChild.textContent = ' Chuyên khoa';
-    dynamicInput.placeholder = 'Tim mạch';
-    dynamicInput.value = dynamicInput.value || 'Tim mạch';
+    dynamicInput.value = dynamicInput.value;
     secondaryTableLabel.textContent = 'Bảng Bác sĩ';
+    if (shouldLog !== false) {
+      addLog('Chọn Doctor -> sẽ dùng DoctorCreator.', 'info');
+    }
   } else {
     dynamicLabel.firstChild.textContent = ' Tình trạng bệnh';
-    dynamicInput.placeholder = 'Tiểu đường';
-    dynamicInput.value = dynamicInput.value || 'Tiểu đường';
+    dynamicInput.value = dynamicInput.value;
     secondaryTableLabel.textContent = 'Bảng Bệnh nhân';
+    if (shouldLog !== false) {
+      addLog('Chọn Patient -> sẽ dùng PatientCreator.', 'info');
+    }
   }
 }
 
@@ -136,30 +190,40 @@ form.addEventListener('submit', async (event) => {
   };
 
   try {
+    addLog('1. Frontend gửi yêu cầu tạo user lên API /register.', 'info');
     const user = await registerUser(formData);
+    addLog(`2. UserService chọn ${user.role}Creator theo userType.`, 'info');
+    addLog('3. validateRequest() hoàn tất, dữ liệu hợp lệ.', 'info');
+    addLog(`4. createUser() tạo ${user.role}User cụ thể.`, 'info');
+    addLog(`5. saveProfile() lưu vào Users và bảng ${user.role}.`, 'info');
+    addLog('6. audit() ghi nhận account vừa tạo.', 'info');
     const snapshot = await fetchSnapshot();
     state.users = snapshot.users || [];
     state.details = snapshot.details || [];
+    addLog(`7. Backend trả về ID #${String(user.id).padStart(3, '0')} và frontend refresh snapshot.`, 'success');
 
     animateSteps();
     showLatestUser(user, formData);
     renderTables();
     form.reset();
-    updateRoleUI(selectedRole);
+    updateRoleUI(selectedRole, false);
   } catch (error) {
     alert(error.message);
   }
 });
 
 async function initialize() {
-  updateRoleUI(selectedRole);
+  updateRoleUI(selectedRole, false);
   try {
     const snapshot = await fetchSnapshot();
     state.users = snapshot.users || [];
     state.details = snapshot.details || [];
     renderTables();
+    updateBackendStatus(true);
+    addLog('Frontend đã kết nối backend và sẵn sàng demo Factory Method.', 'success');
   } catch (error) {
-    alert('Khong ket noi duoc backend Java. Hay chay App.java truoc.');
+    updateBackendStatus(false);
+    addLog('Không kết nối được backend Java.', 'error');
   }
 }
 

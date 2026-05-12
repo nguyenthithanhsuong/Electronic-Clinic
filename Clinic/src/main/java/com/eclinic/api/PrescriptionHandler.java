@@ -70,6 +70,21 @@ public class PrescriptionHandler extends BaseHandler {
                 String json = "{\"id\": " + id + ", \"status\": \"created\"}";
                 sendJson(exchange, json, 201);
             }
+            // PUT /api/prescriptions/ID - update prescription
+            else if ("PUT".equals(method)) {
+                long id = parseId(path, "/api/prescriptions/");
+                String body = readBody(exchange);
+                String notes = extractString(body, "notes");
+                String totalPriceStr = extractString(body, "totalPrice");
+                BigDecimal totalPrice = !totalPriceStr.isEmpty() ? new BigDecimal(totalPriceStr) : BigDecimal.ZERO;
+
+                boolean updated = dao.update(id, notes, totalPrice);
+                if (updated) {
+                    sendJson(exchange, "{\"status\": \"updated\"}", 200);
+                } else {
+                    sendError(exchange, "Prescription not found", 404);
+                }
+            }
             // DELETE /api/prescriptions/ID
             else if ("DELETE".equals(method)) {
                 long id = parseId(path, "/api/prescriptions/");

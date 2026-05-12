@@ -37,6 +37,9 @@ public class RestServer {
         // Dashboard
         server.createContext("/api/dashboard", new DashboardHandler());
 
+        // Users
+        server.createContext("/api/users", new UsersHandler());
+
         // Doctors
         server.createContext("/api/doctors", new DoctorsHandler());
 

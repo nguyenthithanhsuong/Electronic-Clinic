@@ -33,7 +33,7 @@ public class DoctorDAO {
     }
 
     public Doctor findById(long id) throws SQLException {
-        String sql = "SELECT id, user_id, full_name, specialty, phone, email, room_number, created_at FROM doctors WHERE id = ?";
+        String sql = "SELECT d.id, d.user_id, u.username, d.full_name, d.specialty, d.phone, d.email, d.room_number, d.created_at FROM doctors d LEFT JOIN users u ON d.user_id = u.id WHERE d.id = ?";
         Connection conn = ConnectionManager.getConnection();
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -43,10 +43,12 @@ public class DoctorDAO {
                 return new Doctor(
                     rs.getLong("id"),
                     rs.getLong("user_id"),
+                    rs.getString("username"),
                     rs.getString("full_name"),
                     rs.getString("specialty"),
                     rs.getString("phone"),
                     rs.getString("email"),
+                    null,  // password is not stored in doctors table
                     rs.getString("room_number"),
                     rs.getString("created_at")
                 );
@@ -58,7 +60,7 @@ public class DoctorDAO {
     }
 
     public List findAll() throws SQLException {
-        String sql = "SELECT id, user_id, full_name, specialty, phone, email, room_number, created_at FROM doctors";
+        String sql = "SELECT d.id, d.user_id, u.username, d.full_name, d.specialty, d.phone, d.email, d.room_number, d.created_at FROM doctors d LEFT JOIN users u ON d.user_id = u.id";
         Connection conn = ConnectionManager.getConnection();
         List doctors = new ArrayList();
         try {
@@ -68,10 +70,12 @@ public class DoctorDAO {
                 doctors.add(new Doctor(
                     rs.getLong("id"),
                     rs.getLong("user_id"),
+                    rs.getString("username"),
                     rs.getString("full_name"),
                     rs.getString("specialty"),
                     rs.getString("phone"),
                     rs.getString("email"),
+                    null,  // password is not stored in doctors table
                     rs.getString("room_number"),
                     rs.getString("created_at")
                 ));
@@ -99,15 +103,87 @@ public class DoctorDAO {
         }
     }
 
-    public boolean delete(long id) throws SQLException {
-        String sql = "DELETE FROM doctors WHERE id = ?";
+    public boolean updateEmail(long id, String email) throws SQLException {
+        String sql = "UPDATE doctors SET email = ? WHERE id = ?";
         Connection conn = ConnectionManager.getConnection();
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
+            stmt.setString(1, email);
+            stmt.setLong(2, id);
             int rows = stmt.executeUpdate();
             return rows > 0;
         } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
+    public Long getUserIdForDoctor(long doctorId) throws SQLException {
+        String sql = "SELECT user_id FROM doctors WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setLong(1, doctorId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                long userId = rs.getLong("user_id");
+                if (!rs.wasNull()) {
+                    return userId;
+                }
+            }
+            return null;
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
+    public boolean delete(long id) throws SQLException {
+        String selectSql = "SELECT user_id FROM doctors WHERE id = ?";
+        String deleteDoctorSql = "DELETE FROM doctors WHERE id = ?";
+        String deleteUserSql = "DELETE FROM users WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            conn.setAutoCommit(false);
+            PreparedStatement selectStmt = conn.prepareStatement(selectSql);
+            selectStmt.setLong(1, id);
+            ResultSet rs = selectStmt.executeQuery();
+            if (!rs.next()) {
+                conn.rollback();
+                return false;
+            }
+            long userId = rs.getLong("user_id");
+
+            PreparedStatement delDoc = conn.prepareStatement(deleteDoctorSql);
+            delDoc.setLong(1, id);
+            int docRows = delDoc.executeUpdate();
+
+            if (docRows <= 0) {
+                conn.rollback();
+                return false;
+            }
+
+            if (!rs.wasNull()) {
+                PreparedStatement delUser = conn.prepareStatement(deleteUserSql);
+                delUser.setLong(1, userId);
+                int userRows = delUser.executeUpdate();
+                if (userRows <= 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            conn.commit();
+            return true;
+        } catch (SQLException ex) {
+            try {
+                conn.rollback();
+            } catch (SQLException ignore) {
+            }
+            throw ex;
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException ignore) {
+            }
             ConnectionManager.closeConnection(conn);
         }
     }

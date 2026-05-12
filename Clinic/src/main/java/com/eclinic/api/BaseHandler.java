@@ -3,6 +3,7 @@ package com.eclinic.api;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
 public abstract class BaseHandler implements HttpHandler {
@@ -35,8 +36,12 @@ public abstract class BaseHandler implements HttpHandler {
     }
 
     protected String readBody(HttpExchange exchange) throws IOException {
-        byte[] bytes = new byte[exchange.getRequestBody().available()];
-        exchange.getRequestBody().read(bytes);
-        return new String(bytes, "UTF-8");
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] chunk = new byte[1024];
+        int read;
+        while ((read = exchange.getRequestBody().read(chunk)) != -1) {
+            buffer.write(chunk, 0, read);
+        }
+        return new String(buffer.toByteArray(), "UTF-8");
     }
 }

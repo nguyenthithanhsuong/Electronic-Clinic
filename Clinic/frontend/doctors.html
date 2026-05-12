@@ -23,7 +23,9 @@
     <div>
         <h2>Add New Doctor</h2>
         <form onsubmit="handleAddDoctor(event)">
-            <input type="number" id="userId" placeholder="User ID" required>
+            <input type="number" id="userId" placeholder="User ID (Optional - auto-created if empty)">
+            <input type="text" id="username" placeholder="Username (Optional)">
+            <input type="password" id="password" placeholder="Password (Optional)">
             <input type="text" id="fullName" placeholder="Full Name" required>
             <input type="text" id="specialty" placeholder="Specialty" required>
             <input type="text" id="phone" placeholder="Phone" required>
@@ -43,6 +45,8 @@
         <h2>Edit Doctor</h2>
         <form onsubmit="handleEditDoctor(event)">
             <input type="hidden" id="editId">
+            <input type="text" id="editUsername" placeholder="Username">
+            <input type="password" id="editPassword" placeholder="Password">
             <input type="text" id="editFullName" placeholder="Full Name" required>
             <input type="text" id="editSpecialty" placeholder="Specialty" required>
             <input type="email" id="editEmail" placeholder="Email" required>
@@ -91,6 +95,10 @@
                                 <div class="card-field-value">${d.email}</div>
                             </div>
                             <div class="card-field">
+                                <label>Username</label>
+                                <div class="card-field-value">${d.username || ''}</div>
+                            </div>
+                            <div class="card-field">
                                 <label>Phone</label>
                                 <div class="card-field-value">${d.phone}</div>
                             </div>
@@ -117,6 +125,8 @@
             try {
                 const data = {
                     userId: parseInt(document.getElementById('userId').value),
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value,
                     fullName: document.getElementById('fullName').value,
                     specialty: document.getElementById('specialty').value,
                     phone: document.getElementById('phone').value,
@@ -136,6 +146,8 @@
             const doctor = allDoctors.find(d => d.id === id);
             if (doctor) {
                 document.getElementById('editId').value = id;
+                document.getElementById('editUsername').value = doctor.username || '';
+                document.getElementById('editPassword').value = '';
                 document.getElementById('editFullName').value = doctor.fullName;
                 document.getElementById('editSpecialty').value = doctor.specialty;
                 document.getElementById('editEmail').value = doctor.email;
@@ -149,6 +161,8 @@
             try {
                 const id = parseInt(document.getElementById('editId').value);
                 const data = {
+                    username: document.getElementById('editUsername').value,
+                    password: document.getElementById('editPassword').value,
                     fullName: document.getElementById('editFullName').value,
                     specialty: document.getElementById('editSpecialty').value,
                     email: document.getElementById('editEmail').value,
@@ -188,6 +202,8 @@
             try {
                 const newDoc = {
                     userId: 1,
+                    username: 'test_doctor_user',
+                    password: 'test_doctor_pass',
                     fullName: 'Dr. Test Smith',
                     specialty: 'General Practice',
                     phone: '555-0001',
@@ -208,6 +224,8 @@
                 // Test 3: Update
                 log('Test 3: Updating the doctor...');
                 const updateData = {
+                    username: 'updated_doctor_user',
+                    password: 'updated_doctor_pass',
                     fullName: 'Dr. Updated Smith',
                     specialty: 'Cardiology',
                     email: 'updated@clinic.com',

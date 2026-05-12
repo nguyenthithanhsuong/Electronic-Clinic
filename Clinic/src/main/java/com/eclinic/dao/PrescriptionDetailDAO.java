@@ -75,6 +75,28 @@ public class PrescriptionDetailDAO {
         }
     }
 
+    public List findAll() throws SQLException {
+        String sql = "SELECT id, prescription_id, medicine_id, quantity, dosage FROM prescription_details";
+        Connection conn = ConnectionManager.getConnection();
+        List details = new ArrayList();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                details.add(new PrescriptionDetail(
+                    rs.getLong("id"),
+                    rs.getLong("prescription_id"),
+                    rs.getLong("medicine_id"),
+                    rs.getInt("quantity"),
+                    rs.getString("dosage")
+                ));
+            }
+            return details;
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
     public boolean update(long id, int quantity, String dosage) throws SQLException {
         String sql = "UPDATE prescription_details SET quantity = ?, dosage = ? WHERE id = ?";
         Connection conn = ConnectionManager.getConnection();

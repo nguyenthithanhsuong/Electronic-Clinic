@@ -39,6 +39,10 @@ public class PrescriptionDetailHandler extends BaseHandler {
                     List details = dao.findByPrescriptionId(prescriptionId);
                     String json = listToJson(details);
                     sendJson(exchange, json, 200);
+                } else {
+                    List details = dao.findAll();
+                    String json = listToJson(details);
+                    sendJson(exchange, json, 200);
                 }
             }
             // POST /api/prescriptions/details - create detail

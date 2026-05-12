@@ -24,6 +24,8 @@
         <h2>Add New Patient</h2>
         <form onsubmit="handleAddPatient(event)">
             <input type="number" id="userId" placeholder="User ID (Optional)">
+            <input type="text" id="username" placeholder="Username (Optional)">
+            <input type="password" id="password" placeholder="Password (Optional)">
             <input type="text" id="fullName" placeholder="Full Name" required>
             <input type="date" id="dob" placeholder="Date of Birth" required>
             <select id="gender" required>
@@ -49,6 +51,20 @@
         <h2>Patient Details & Medical History</h2>
         <button onclick="closeDetail()">Close</button>
         <div id="detailContent"></div>
+    </div>
+
+    <div id="editPanel" style="display: none;">
+        <h2>Edit Patient</h2>
+        <form onsubmit="handleEditPatient(event)">
+            <input type="hidden" id="editId">
+            <input type="text" id="editUsername" placeholder="Username">
+            <input type="password" id="editPassword" placeholder="Password">
+            <input type="text" id="editFullName" placeholder="Full Name" required>
+            <input type="text" id="editPhone" placeholder="Phone" required>
+            <input type="text" id="editAddress" placeholder="Address" required>
+            <button type="submit">Save Changes</button>
+            <button type="button" onclick="cancelEdit()">Cancel</button>
+        </form>
     </div>
 
     <div id="testLog">
@@ -82,6 +98,7 @@
                         <td>${p.phone}</td>
                         <td>${p.insuranceCode}</td>
                         <td>
+                            <button onclick="editPatient(${p.id})">Edit</button>
                             <button onclick="viewDetails(${p.id})">History</button>
                             <button onclick="deletePatient(${p.id})" style="background: #e74c3c;">Delete</button>
                         </td>
@@ -99,6 +116,8 @@
             try {
                 const data = {
                     userId: document.getElementById('userId').value || null,
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value,
                     fullName: document.getElementById('fullName').value,
                     dob: document.getElementById('dob').value,
                     gender: document.getElementById('gender').value,
@@ -113,6 +132,43 @@
             } catch (error) {
                 showMessage('Failed to add patient: ' + error.message, 'error');
             }
+        }
+
+        function editPatient(id) {
+            const patient = allPatients.find(p => p.id === id);
+            if (patient) {
+                document.getElementById('editId').value = id;
+                document.getElementById('editUsername').value = patient.username || '';
+                document.getElementById('editPassword').value = '';
+                document.getElementById('editFullName').value = patient.fullName;
+                document.getElementById('editPhone').value = patient.phone;
+                document.getElementById('editAddress').value = patient.address;
+                document.getElementById('editPanel').style.display = 'block';
+            }
+        }
+
+        async function handleEditPatient(event) {
+            event.preventDefault();
+            try {
+                const id = parseInt(document.getElementById('editId').value);
+                const data = {
+                    username: document.getElementById('editUsername').value,
+                    password: document.getElementById('editPassword').value,
+                    fullName: document.getElementById('editFullName').value,
+                    phone: document.getElementById('editPhone').value,
+                    address: document.getElementById('editAddress').value
+                };
+                await apiPut(`/patients/${id}`, data);
+                showMessage('Patient updated successfully!', 'success');
+                cancelEdit();
+                loadPatients();
+            } catch (error) {
+                showMessage('Failed to update patient: ' + error.message, 'error');
+            }
+        }
+
+        function cancelEdit() {
+            document.getElementById('editPanel').style.display = 'none';
         }
 
         async function viewDetails(patientId) {
@@ -135,6 +191,10 @@
                         <div style="background: #f8f9ff; padding: 1rem; border-radius: 8px;">
                             <label style="color: #667eea; font-weight: 600;">Phone</label>
                             <p style="margin-top: 0.5rem;">${patient.phone}</p>
+                        </div>
+                        <div style="background: #f8f9ff; padding: 1rem; border-radius: 8px;">
+                            <label style="color: #667eea; font-weight: 600;">Username</label>
+                            <p style="margin-top: 0.5rem;">${patient.username || ''}</p>
                         </div>
                         <div style="background: #f8f9ff; padding: 1rem; border-radius: 8px;">
                             <label style="color: #667eea; font-weight: 600;">Address</label>
@@ -212,6 +272,8 @@
                 log('Test 1: Creating a patient...');
                 const newPat = {
                     userId: null,
+                    username: 'test_patient_user',
+                    password: 'test_patient_pass',
                     fullName: 'John Test Patient',
                     dob: '1990-05-15',
                     gender: 'MALE',
@@ -230,20 +292,35 @@
                 log(`[OK] Retrieved: ${pat.fullName} (DOB: ${pat.dob})`);
                 log('');
 
-                // Test 3: List All
-                log('Test 3: Listing all patients...');
+                // Test 3: Update
+                log('Test 3: Updating the patient...');
+                const updateData = {
+                    username: 'updated_patient_user',
+                    password: 'updated_patient_pass',
+                    fullName: 'John Updated Patient',
+                    phone: '555-1234',
+                    address: '456 Updated Street'
+                };
+                await apiPut(`/patients/${patId}`, updateData);
+                log('[OK] Patient updated');
+                const updated = await apiGet(`/patients/${patId}`);
+                log(`[OK] Verified: ${updated.fullName} now has username ${updated.username || ''}`);
+                log('');
+
+                // Test 4: List All
+                log('Test 4: Listing all patients...');
                 const patients = await apiGet('/patients');
                 log(`[OK] Total patients in system: ${patients.length}`);
                 log('');
 
-                // Test 4: Get Appointments for Patient
-                log('Test 4: Checking appointments for patient...');
+                // Test 5: Get Appointments for Patient
+                log('Test 5: Checking appointments for patient...');
                 const apts = await apiGet(`/appointments?patientId=${patId}`);
                 log(`[OK] Patient has ${apts.length} appointment(s)`);
                 log('');
 
-                // Test 5: Delete
-                log('Test 5: Deleting the test patient...');
+                // Test 6: Delete
+                log('Test 6: Deleting the test patient...');
                 await apiDelete(`/patients/${patId}`);
                 log(`[OK] Patient ${patId} deleted`);
 

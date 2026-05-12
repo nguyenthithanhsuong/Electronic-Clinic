@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,8 +19,8 @@ public class AppointmentDAO {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setLong(1, doctorId);
             stmt.setLong(2, patientId);
-            stmt.setString(3, startDate);
-            stmt.setString(4, endDate);
+            stmt.setTimestamp(3, Timestamp.valueOf(startDate));
+            stmt.setTimestamp(4, Timestamp.valueOf(endDate));
             stmt.setString(5, reason);
             stmt.setString(6, status);
             ResultSet rs = stmt.executeQuery();

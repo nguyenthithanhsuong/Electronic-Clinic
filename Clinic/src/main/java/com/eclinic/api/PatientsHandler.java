@@ -2,7 +2,9 @@ package com.eclinic.api;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.eclinic.dao.PatientDAO;
+import com.eclinic.dao.UserDAO;
 import com.eclinic.models.Patient;
+import com.eclinic.models.User;
 import java.io.IOException;
 import java.util.List;
 
@@ -22,7 +24,7 @@ public class PatientsHandler extends BaseHandler {
         try {
             if ("GET".equals(method)) {
                 if (path.matches("/api/patients/\\d+")) {
-                    long id = Long.parseLong(path.substring(13));
+                    long id = Long.parseLong(path.substring(14));
                     Patient patient = dao.findById(id);
                     if (patient != null) {
                         String json = toJson(patient);
@@ -37,11 +39,9 @@ public class PatientsHandler extends BaseHandler {
                 }
             } else if ("POST".equals(method)) {
                 String body = readBody(exchange);
-                Long userId = null;
-                String userIdStr = extractString(body, "userId");
-                if (userIdStr != null && !userIdStr.equals("")) {
-                    userId = Long.parseLong(userIdStr);
-                }
+                Long requestedUserId = extractNullableLong(body, "userId");
+                String username = extractString(body, "username");
+                String password = extractString(body, "password");
                 String fullName = extractString(body, "fullName");
                 String dob = extractString(body, "dob");
                 String gender = extractString(body, "gender");
@@ -49,24 +49,53 @@ public class PatientsHandler extends BaseHandler {
                 String address = extractString(body, "address");
                 String insuranceCode = extractString(body, "insuranceCode");
 
+                if (fullName.length() == 0 || dob.length() == 0 || gender.length() == 0 || phone.length() == 0 || address.length() == 0 || insuranceCode.length() == 0) {
+                    sendError(exchange, "Invalid patient payload", 400);
+                    return;
+                }
+
+                Long userId = resolveOrCreatePatientUserId(requestedUserId, username, password, fullName, phone);
+
                 long id = dao.create(userId, fullName, dob, gender, phone, address, insuranceCode);
                 String json = "{\"id\": " + id + ", \"status\": \"created\"}";
                 sendJson(exchange, json, 201);
             } else if ("PUT".equals(method)) {
-                long id = Long.parseLong(path.substring(13));
+                long id = Long.parseLong(path.substring(14));
                 String body = readBody(exchange);
+                String username = extractString(body, "username");
+                String password = extractString(body, "password");
                 String fullName = extractString(body, "fullName");
                 String phone = extractString(body, "phone");
                 String address = extractString(body, "address");
 
-                boolean updated = dao.update(id, fullName, phone, address);
-                if (updated) {
-                    sendJson(exchange, "{\"status\": \"updated\"}", 200);
-                } else {
+                PatientDAO daoLocal = new PatientDAO();
+                Patient patient = daoLocal.findById(id);
+                if (patient == null) {
                     sendError(exchange, "Patient not found", 404);
+                    return;
                 }
+
+                boolean patientUpdated = daoLocal.update(id, fullName, phone, address);
+                if (!patientUpdated) {
+                    sendError(exchange, "Failed to update patient", 500);
+                    return;
+                }
+
+                Long userId = daoLocal.getUserIdForPatient(id);
+                if (userId != null) {
+                    UserDAO userDAO = new UserDAO();
+                    if (username != null && username.length() > 0 && password != null && password.length() > 0) {
+                        userDAO.updateUsernameAndPassword(userId, username, password);
+                    } else if (username != null && username.length() > 0) {
+                        userDAO.updateUsername(userId, username);
+                    } else if (password != null && password.length() > 0) {
+                        userDAO.updatePassword(userId, password);
+                    }
+                }
+
+                sendJson(exchange, "{\"status\": \"updated\"}", 200);
             } else if ("DELETE".equals(method)) {
-                long id = Long.parseLong(path.substring(13));
+                long id = Long.parseLong(path.substring(14));
                 boolean deleted = dao.delete(id);
                 if (deleted) {
                     sendJson(exchange, "{\"status\": \"deleted\"}", 200);
@@ -76,6 +105,8 @@ public class PatientsHandler extends BaseHandler {
             } else {
                 sendError(exchange, "Method not allowed", 405);
             }
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, e.getMessage(), 400);
         } catch (Exception e) {
             sendError(exchange, e.getMessage(), 500);
         }
@@ -86,6 +117,7 @@ public class PatientsHandler extends BaseHandler {
         return "{" +
             "\"id\": " + p.getId() + ", " +
             "\"userId\": " + (p.getUserId() != null ? p.getUserId() : "null") + ", " +
+            "\"username\": \"" + escapeJson(p.getUsername()) + "\", " +
             "\"fullName\": \"" + escapeJson(p.getFullName()) + "\", " +
             "\"dob\": \"" + escapeJson(p.getDob()) + "\", " +
             "\"gender\": \"" + escapeJson(p.getGender()) + "\", " +
@@ -114,5 +146,71 @@ public class PatientsHandler extends BaseHandler {
         int end = json.indexOf("\"", start);
         if (end == -1) return "";
         return json.substring(start, end);
+    }
+
+    private Long extractNullableLong(String json, String key) {
+        String search = "\"" + key + "\":";
+        int idx = json.indexOf(search);
+        if (idx == -1) return null;
+        int start = idx + search.length();
+        int end = json.indexOf(",", start);
+        if (end == -1) end = json.indexOf("}", start);
+        if (end == -1) throw new IllegalArgumentException("Invalid JSON payload");
+
+        String raw = json.substring(start, end).trim();
+        if (raw.length() == 0 || "null".equals(raw)) {
+            return null;
+        }
+        if (raw.startsWith("\"") && raw.endsWith("\"") && raw.length() >= 2) {
+            raw = raw.substring(1, raw.length() - 1).trim();
+        }
+        if (raw.length() == 0) {
+            return null;
+        }
+        try {
+            return Long.valueOf(Long.parseLong(raw));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid userId");
+        }
+    }
+
+    private Long resolveOrCreatePatientUserId(Long requestedUserId, String username, String password, String fullName, String phone) throws Exception {
+        UserDAO userDAO = new UserDAO();
+
+        if (requestedUserId != null && requestedUserId.longValue() > 0) {
+            User existing = userDAO.findById(requestedUserId.longValue());
+            if (existing == null) {
+                throw new IllegalArgumentException("userId does not exist");
+            }
+            if (!"PATIENT".equals(existing.getRole())) {
+                throw new IllegalArgumentException("userId must belong to a PATIENT user");
+            }
+            return requestedUserId;
+        }
+
+        String resolvedUsername = isBlank(username) ? generateUsername("patient", fullName, phone) : username;
+        String resolvedPassword = isBlank(password) ? "TEMP_HASH" : password;
+        long createdUserId = userDAO.create(resolvedUsername, resolvedPassword, "PATIENT", "ACTIVE");
+        return Long.valueOf(createdUserId);
+    }
+
+    private String generateUsername(String prefix, String fullName, String fallback) {
+        String base = fallback;
+        if (base == null || base.trim().length() == 0) {
+            base = fullName;
+        }
+        if (base == null || base.trim().length() == 0) {
+            base = prefix;
+        }
+
+        String normalized = base.toLowerCase().replaceAll("[^a-z0-9]", "");
+        if (normalized.length() == 0) {
+            normalized = prefix;
+        }
+        return prefix + "_" + normalized + "_" + System.currentTimeMillis();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().length() == 0;
     }
 }

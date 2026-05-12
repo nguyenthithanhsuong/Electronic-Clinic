@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Sign In</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="signin.html">Sign In</a>
+        <a href="signup.html">Sign Up</a>
+    </nav>
+
+    <h1>Sign In</h1>
+    <div id="message"></div>
+
+    <form id="signinForm">
+        <label>Username<br><input type="text" id="username" required></label><br><br>
+        <label>Password<br><input type="password" id="password" required></label><br><br>
+        <button type="submit">Sign In</button>
+    </form>
+
+    <script src="common.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        const form = document.getElementById('signinForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            try {
+                // Fetch all users and perform a simple match (password stored as passwordHash)
+                const users = await apiGet('/users');
+                const found = users.find(u => u.username === username && u.passwordHash === password);
+                if (!found) {
+                    showMessage('Invalid username or password', 'error');
+                    return;
+                }
+                saveCurrentUser(found);
+                showMessage('Signed in successfully', 'success');
+                setTimeout(() => window.location.href = 'index.html', 800);
+            } catch (err) {
+                showMessage('Sign in failed: ' + err.message, 'error');
+            }
+        });
+
+        // Show current session if present
+        const current = getCurrentUser();
+        if (current) {
+            showMessage('Already signed in as ' + current.username, 'info');
+        }
+    </script>
+</body>
+</html>

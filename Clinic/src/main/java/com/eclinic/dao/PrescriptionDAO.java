@@ -96,6 +96,21 @@ public class PrescriptionDAO {
         }
     }
 
+    public boolean update(long id, String notes, BigDecimal totalPrice) throws SQLException {
+        String sql = "UPDATE prescriptions SET notes = ?, total_price = ? WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, notes);
+            stmt.setBigDecimal(2, totalPrice);
+            stmt.setLong(3, id);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
     public boolean delete(long id) throws SQLException {
         String sql = "DELETE FROM prescriptions WHERE id = ?";
         Connection conn = ConnectionManager.getConnection();

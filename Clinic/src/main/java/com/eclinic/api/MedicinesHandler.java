@@ -23,7 +23,7 @@ public class MedicinesHandler extends BaseHandler {
         try {
             if ("GET".equals(method)) {
                 if (path.matches("/api/medicines/\\d+")) {
-                    long id = Long.parseLong(path.substring(14));
+                    long id = Long.parseLong(path.substring(15));
                     Medicine med = dao.findById(id);
                     if (med != null) {
                         String json = toJson(med);
@@ -48,7 +48,7 @@ public class MedicinesHandler extends BaseHandler {
                 String json = "{\"id\": " + id + ", \"status\": \"created\"}";
                 sendJson(exchange, json, 201);
             } else if ("PUT".equals(method)) {
-                long id = Long.parseLong(path.substring(14));
+                long id = Long.parseLong(path.substring(15));
                 String body = readBody(exchange);
                 int newQuantity = Integer.parseInt(extractString(body, "stockQuantity"));
 
@@ -59,7 +59,7 @@ public class MedicinesHandler extends BaseHandler {
                     sendError(exchange, "Medicine not found", 404);
                 }
             } else if ("DELETE".equals(method)) {
-                long id = Long.parseLong(path.substring(14));
+                long id = Long.parseLong(path.substring(15));
                 boolean deleted = dao.delete(id);
                 if (deleted) {
                     sendJson(exchange, "{\"status\": \"deleted\"}", 200);

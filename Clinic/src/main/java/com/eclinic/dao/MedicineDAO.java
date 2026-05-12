@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +22,7 @@ public class MedicineDAO {
             stmt.setString(2, unit);
             stmt.setBigDecimal(3, price);
             stmt.setInt(4, stockQuantity);
-            stmt.setString(5, expiryDate);
+            stmt.setTimestamp(5, Timestamp.valueOf(expiryDate + " 00:00:00"));
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getLong(1);

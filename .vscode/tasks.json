@@ -33,15 +33,12 @@
     {
       "label": "Compile Clinic Java",
       "type": "shell",
-      "command": "javac",
+      "command": "powershell",
       "args": [
-        "-encoding",
-        "UTF-8",
-        "-cp",
-        "Clinic/lib/postgresql-42.7.5.jar",
-        "-d",
-        "Clinic/target/classes",
-        "Clinic/src/main/java/com/eclinic/*.java"
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$sources = Get-ChildItem -Path 'Clinic/src/main/java' -Recurse -Filter '*.java' | ForEach-Object { $_.FullName }; javac -encoding UTF-8 -cp 'Clinic/lib/postgresql-42.7.5.jar' -d 'Clinic/target/classes' $sources"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

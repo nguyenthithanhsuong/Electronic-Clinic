@@ -114,6 +114,78 @@ public class UserDAO {
         }
     }
 
+    public boolean updateUsername(long id, String username) throws SQLException {
+        String sql = "UPDATE users SET username = ? WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, username);
+            stmt.setLong(2, id);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
+    public boolean updateUsernameAndPassword(long id, String username, String passwordHash) throws SQLException {
+        String sql = "UPDATE users SET username = ?, password_hash = ? WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, username);
+            stmt.setString(2, passwordHash);
+            stmt.setLong(3, id);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
+    public boolean updatePassword(long id, String passwordHash) throws SQLException {
+        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, passwordHash);
+            stmt.setLong(2, id);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
+    public boolean updateEmail(long id, String email) throws SQLException {
+        String sql = "UPDATE users SET email = ? WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, email);
+            stmt.setLong(2, id);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
+    public boolean updateEmailAndPassword(long id, String email, String passwordHash) throws SQLException {
+        String sql = "UPDATE users SET email = ?, password_hash = ? WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, email);
+            stmt.setString(2, passwordHash);
+            stmt.setLong(3, id);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
     public boolean delete(long id) throws SQLException {
         String sql = "DELETE FROM users WHERE id = ?";
         Connection conn = ConnectionManager.getConnection();

@@ -1,4 +1,0 @@
-USER|1|Demo+B%C3%A1c+S%C4%A9|Doctor+-+User|Doctor|Demo+Chuy%C3%AAn+Khoa
-USER|2|Demo+B%E1%BB%87nh+Nh%C3%A2n|Patient+-+User|Patient|Demo+T%C3%ACnh+Tr%E1%BA%A1ng
-USER|3|Y+t%C3%A1|Doctor+-+User|Doctor|Khoa+Demo
-USER|4|Nguyen+Thi+Thanh+Suong|Doctor+-+User|Doctor|Demo+Them+Doctor

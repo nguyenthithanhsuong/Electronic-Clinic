@@ -1,5 +1,5 @@
 // Utility functions for API calls
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = 'http://localhost:3001/api';
 
 async function apiGet(endpoint) {
     try {

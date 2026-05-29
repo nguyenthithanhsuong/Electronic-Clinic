@@ -2,43 +2,15 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Compile Demo Java",
+      "label": "Compile Clinic Java",
       "type": "shell",
       "command": "javac",
       "args": [
         "-encoding",
         "UTF-8",
         "-d",
-        "Demo/target/classes",
-        "Demo/src/main/java/com/eclinic/*.java"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "group": "build"
-    },
-    {
-      "label": "Run Demo App",
-      "type": "shell",
-      "command": "java",
-      "args": [
-        "-cp",
-        "Demo/target/classes",
-        "com.eclinic.App"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
-    },
-    {
-      "label": "Compile Clinic Java",
-      "type": "shell",
-      "command": "powershell",
-      "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        "$sources = Get-ChildItem -Path 'Clinic/src/main/java' -Recurse -Filter '*.java' | ForEach-Object { $_.FullName }; javac -encoding UTF-8 -cp 'Clinic/lib/postgresql-42.7.5.jar' -d 'Clinic/target/classes' $sources"
+        "target/classes",
+        "src/main/java/com/eclinic/*.java"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -51,7 +23,35 @@
       "command": "java",
       "args": [
         "-cp",
-        "Clinic/target/classes;Clinic/lib/postgresql-42.7.5.jar",
+        "target/classes",
+        "com.eclinic.App"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Compile Clinic Java (recursive)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$sources = Get-ChildItem -Path 'src/main/java' -Recurse -Filter '*.java' | ForEach-Object { $_.FullName }; javac -encoding UTF-8 -cp 'lib/postgresql-42.7.5.jar' -d 'target/classes' $sources"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build"
+    },
+    {
+      "label": "Run Clinic App",
+      "type": "shell",
+      "command": "java",
+      "args": [
+        "-cp",
+        "target/classes;lib/postgresql-42.7.5.jar",
         "com.eclinic.App"
       ],
       "options": {

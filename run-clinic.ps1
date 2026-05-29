@@ -27,30 +27,30 @@ if (-not (Test-Path $java)) {
     exit 1
 }
 
-$sources = Get-ChildItem -Path 'Clinic/src/main/java' -Recurse -Filter '*.java' | ForEach-Object { $_.FullName }
+$sources = Get-ChildItem -Path 'src/main/java' -Recurse -Filter '*.java' | ForEach-Object { $_.FullName }
 if (-not $sources -or $sources.Count -eq 0) {
-    Write-Error 'No Java source files found under Clinic/src/main/java'
+    Write-Error 'No Java source files found under src/main/java'
     exit 1
 }
 
-$listenLine = netstat -ano | Select-String -Pattern ':8080\s+.*LISTENING\s+\d+$' | Select-Object -First 1
+$listenLine = netstat -ano | Select-String -Pattern ':3001\s+.*LISTENING\s+\d+$' | Select-Object -First 1
 if ($listenLine) {
     $existingPid = ($listenLine.Line -split '\s+')[-1]
     if ($ForceRestart) {
-        Write-Host "Port 8080 is in use by PID $existingPid. Stopping it because -ForceRestart was provided..."
+        Write-Host "Port 3001 is in use by PID $existingPid. Stopping it because -ForceRestart was provided..."
         Stop-Process -Id ([int]$existingPid) -Force
     } else {
-        Write-Error "Port 8080 is already in use (PID $existingPid). Close that process or rerun with: .\\run-clinic.ps1 -ForceRestart"
+        Write-Error "Port 3001 is already in use (PID $existingPid). Close that process or rerun with: .\\run-clinic.ps1 -ForceRestart"
         exit 1
     }
 }
 
 Write-Host 'Compiling Clinic sources...'
-& $javac -encoding UTF-8 -cp 'Clinic/lib/postgresql-42.7.5.jar' -d 'Clinic/target/classes' $sources
+& $javac -encoding UTF-8 -cp 'lib/postgresql-42.7.5.jar' -d 'target/classes' $sources
 if ($LASTEXITCODE -ne 0) {
     Write-Error 'Compilation failed.'
     exit $LASTEXITCODE
 }
 
-Write-Host 'Starting Clinic REST server at http://localhost:8080'
-& $java -cp 'Clinic/target/classes;Clinic/lib/postgresql-42.7.5.jar' com.eclinic.api.RestServer
+Write-Host 'Starting Clinic REST server at http://localhost:3001'
+& $java -cp 'target/classes;lib/postgresql-42.7.5.jar' com.eclinic.api.RestServer

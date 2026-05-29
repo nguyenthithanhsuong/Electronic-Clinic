@@ -1,77 +1,65 @@
-# From workspace root
-cd Demo
-javac -encoding UTF-8 -d target/classes src/main/java/com/eclinic/*.java
-java -cp target/classes com.eclinic.App
+# Clinic Backend + Supabase
 
-# Use this from workspace root:
-powershell -ExecutionPolicy Bypass -File run-clinic.ps1
+This folder is the Clinic backend scaffold wired for Supabase PostgreSQL via JDBC.
 
-# If port 8080 is already in use, run:
-powershell -ExecutionPolicy Bypass -File run-clinic.ps1 -ForceRestart
+## 1) Create schema in Supabase
 
-# Electronic Clinic Workspace
+1. Open Supabase project dashboard.
+2. Go to SQL Editor.
+3. Paste and run [data/supabase-schema.sql](data/supabase-schema.sql).
 
-Workspace nay da duoc tach thanh 2 project:
+## 2) Get connection info from Supabase
 
-- `Demo/`: Toan bo code hien tai (ban demo).
-- `Clinic/`: Scaffold project moi (dang de trong, co cau hinh Java co ban).
+In Supabase dashboard, open: Project Settings -> Database.
 
-## Cau truc
+Use these values:
+- Host
+- Port
+- Database name
+- User
+- Password
+
+Do not use the REST API endpoint from Project Settings -> API for JDBC.
+
+Build JDBC URL in this format:
 
 ```text
-Electronic-Clinic/
-|- Demo/
-|  |- pom.xml
-|  |- src/main/java/com/eclinic/*.java
-|  |- target/classes/
-|  |- data/
-|  \- frontend/
-|- Clinic/
-|  |- pom.xml
-|  |- src/main/java/com/eclinic/App.java
-|  |- target/classes/
-|  |- data/
-|  \- frontend/
-\- .vscode/tasks.json
+jdbc:postgresql://<host>:5432/postgres?sslmode=require
 ```
 
-## Lenh cho Demo
+If your Supabase URL looks like `https://<project-ref>.supabase.co/rest/v1/`, the JDBC host is usually `db.<project-ref>.supabase.co`.
 
-Compile:
+If Supabase gives you a connection string like `postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres`, the JDBC version is:
+
+```text
+jdbc:postgresql://db.<project-ref>.supabase.co:5432/postgres?sslmode=require
+```
+
+## 3) Set environment variables (PowerShell)
+
+Run these in terminal before starting app:
 
 ```powershell
-javac -encoding UTF-8 -d Demo/target/classes Demo/src/main/java/com/eclinic/*.java
+$env:SUPABASE_DB_URL="jdbc:postgresql://<host>:5432/postgres?sslmode=require"
+$env:SUPABASE_DB_USER="postgres"
+$env:SUPABASE_DB_PASSWORD="<your-db-password>"
 ```
 
-Run:
+## 4) Compile and run Clinic app
+
+From workspace root:
 
 ```powershell
-java -cp Demo/target/classes com.eclinic.App
+javac -encoding UTF-8 -cp lib/postgresql-42.7.5.jar -d target/classes src/main/java/com/eclinic/*.java
+java -cp "target/classes;lib/postgresql-42.7.5.jar" com.eclinic.App
 ```
 
-## Lenh cho Clinic
+If connected, app prints database name, user, and server time.
 
-Compile:
+## Notes
 
-```powershell
-javac -encoding UTF-8 -cp Clinic/lib/postgresql-42.7.5.jar -d Clinic/target/classes Clinic/src/main/java/com/eclinic/*.java
-```
-
-Run:
-
-```powershell
-java -cp "Clinic/target/classes;Clinic/lib/postgresql-42.7.5.jar" com.eclinic.App
-```
-
-Luu y: Clinic da duoc noi voi Supabase bang JDBC, xem huong dan tai `Clinic/README.md`.
-
-## VS Code Tasks
-
-Tasks da duoc cap nhat de tach rieng:
-
-- `Compile Demo Java`
-- `Run Demo App`
-- `Compile Clinic Java`
-- `Run Clinic App`
-
-Ban van co the xem tai lieu demo chi tiet o `Demo/README.md`.
+- `App.java` supports env vars and JVM properties:
+  - `SUPABASE_DB_URL` or `-Dsupabase.db.url`
+  - `SUPABASE_DB_USER` or `-Dsupabase.db.user`
+  - `SUPABASE_DB_PASSWORD` or `-Dsupabase.db.password`
+- Supabase PostgreSQL requires SSL; keep `sslmode=require` in JDBC URL.

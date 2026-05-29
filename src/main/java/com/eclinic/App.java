@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class App {
     public static void main(String[] args) {
-        Map dotenv = loadDotEnv();
+        Map<String, String> dotenv = loadDotEnv();
 
         String dbUrl = getConfig(dotenv, "SUPABASE_DB_URL", "supabase.db.url");
         String dbUser = getConfig(dotenv, "SUPABASE_DB_USER", "supabase.db.user");
@@ -80,7 +80,7 @@ public class App {
         }
     }
 
-    private static String getConfig(Map dotenv, String envKey, String systemPropertyKey) {
+    private static String getConfig(Map<String, String> dotenv, String envKey, String systemPropertyKey) {
         String fromSystemProperty = System.getProperty(systemPropertyKey);
         if (!isBlank(fromSystemProperty)) {
             return fromSystemProperty;
@@ -135,10 +135,9 @@ public class App {
         return jdbcUrl.substring(hostStart, hostEnd);
     }
 
-    private static Map loadDotEnv() {
-        Map values = new HashMap();
+    private static Map<String, String> loadDotEnv() {
+        Map<String, String> values = new HashMap<String, String>();
         File[] candidates = new File[] {
-            new File("Clinic/.env"),
             new File(".env")
         };
 

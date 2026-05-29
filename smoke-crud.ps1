@@ -4,7 +4,7 @@ function To-JsonBody($obj) {
     return ($obj | ConvertTo-Json -Compress)
 }
 
-$base = 'http://localhost:8080/api'
+$base = 'http://localhost:3001/api'
 $ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $out = @()
 

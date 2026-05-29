@@ -5,7 +5,7 @@ This folder contains the complete Clinic electronic health record backend with J
 ## Folder Structure
 
 ```
-Clinic/src/main/java/com/eclinic/
+src/main/java/com/eclinic/
 ├── App.java                          # Main entry point with JDBC setup
 ├── models/                           # Data model classes (8 tables)
 │   ├── User.java                     # Users table model
@@ -31,7 +31,7 @@ Clinic/src/main/java/com/eclinic/
 
 ## Database Schema (8 Tables)
 
-All tables are auto-created via SQL in `Clinic/data/supabase-schema.sql`. Run this SQL in Supabase before using the backend.
+All tables are auto-created via SQL in `data/supabase-schema.sql`. Run this SQL in Supabase before using the backend.
 
 | Table | Columns | Purpose |
 |-------|---------|---------|
@@ -138,17 +138,17 @@ appointmentDAO.updateStatus(appointmentId, "CONFIRMED");
 From workspace root:
 
 ```powershell
-javac -encoding UTF-8 -cp Clinic/lib/postgresql-42.7.5.jar -d Clinic/target/classes `
-    Clinic/src/main/java/com/eclinic/*.java `
-    Clinic/src/main/java/com/eclinic/models/*.java `
-    Clinic/src/main/java/com/eclinic/dao/*.java `
-    Clinic/src/main/java/com/eclinic/database/*.java
+javac -encoding UTF-8 -cp lib/postgresql-42.7.5.jar -d target/classes `
+    src/main/java/com/eclinic/*.java `
+    src/main/java/com/eclinic/models/*.java `
+    src/main/java/com/eclinic/dao/*.java `
+    src/main/java/com/eclinic/database/*.java
 ```
 
 ## Run
 
 ```powershell
-java -cp "Clinic/target/classes;Clinic/lib/postgresql-42.7.5.jar" com.eclinic.App
+java -cp "target/classes;lib/postgresql-42.7.5.jar" com.eclinic.App
 ```
 
 ## Key Design Patterns
@@ -161,7 +161,7 @@ java -cp "Clinic/target/classes;Clinic/lib/postgresql-42.7.5.jar" com.eclinic.Ap
 
 ## Environment Variables
 
-The App reads from [Clinic/.env](../.env):
+The App reads from [.env](.env):
 
 ```
 SUPABASE_DB_URL=jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require

@@ -15,7 +15,7 @@ public class StaticFileHandler extends BaseHandler {
             path = "/index.html";
         }
 
-        String filePath = "Clinic/frontend" + path;
+        String filePath = "frontend-mock" + path;
         File file = new File(filePath);
 
         if (!file.exists()) {

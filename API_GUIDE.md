@@ -15,7 +15,7 @@
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
 │  REST API Server (Java - SimpleRestServer)                  │
-│  - Port 8080                                                 │
+│  - Port 3001                                                 │
 │  - Routes: /api/dashboard, /api/doctors, /api/patients, etc  │
 └──────────────────────┬──────────────────────────────────────┘
                        │ JDBC/SQL
@@ -39,26 +39,26 @@
 ### 1. Prerequisites
 - Java 1.8+ installed
 - Supabase account with database schema initialized
-- PostgreSQL JDBC driver (included: `Clinic/lib/postgresql-42.7.5.jar`)
+- PostgreSQL JDBC driver (included: `lib/postgresql-42.7.5.jar`)
 
 ### 2. Start the REST API Server
 
 From the workspace root:
 ```powershell
-java -cp "Clinic/target/classes;Clinic/lib/postgresql-42.7.5.jar" com.eclinic.api.SimpleRestServer
+java -cp "target/classes;lib/postgresql-42.7.5.jar" com.eclinic.api.SimpleRestServer
 ```
 
 Expected output:
 ```
 Initializing database connection...
 Database connection initialized.
-Starting REST API server on http://localhost:8080
-REST API server started. Open http://localhost:8080 in browser.
+Starting REST API server on http://localhost:3001
+REST API server started. Open http://localhost:3001 in browser.
 ```
 
 ### 3. Access the Frontend
 
-Open browser to: **http://localhost:8080**
+Open browser to: **http://localhost:3001**
 
 Available pages:
 - **Dashboard** (`/`) - System statistics and test suite
@@ -176,7 +176,7 @@ Example POST body:
 
 ### Get Dashboard Stats
 ```powershell
-Invoke-WebRequest -Uri "http://localhost:8080/api/dashboard" -Method GET | Select-Object -ExpandProperty Content
+Invoke-WebRequest -Uri "http://localhost:3001/api/dashboard" -Method GET | Select-Object -ExpandProperty Content
 ```
 
 ### Create Doctor
@@ -191,27 +191,26 @@ $body = @"
   "roomNumber": "Room 1"
 }
 "@
-Invoke-WebRequest -Uri "http://localhost:8080/api/doctors" -Method POST -ContentType "application/json" -Body $body -UseBasicParsing | Select-Object -ExpandProperty Content
+Invoke-WebRequest -Uri "http://localhost:3001/api/doctors" -Method POST -ContentType "application/json" -Body $body -UseBasicParsing | Select-Object -ExpandProperty Content
 ```
 
 ### List Patients
 ```powershell
-Invoke-WebRequest -Uri "http://localhost:8080/api/patients" -Method GET -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json
+Invoke-WebRequest -Uri "http://localhost:3001/api/patients" -Method GET -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json
 ```
 
 ## File Structure
 
 ```
-Clinic/
-├── src/main/java/com/eclinic/
+src/main/java/com/eclinic/
 │   ├── App.java                    # Connection test entry point
 │   ├── api/
-│   │   └── SimpleRestServer.java   # REST API server (port 8080)
+│   │   └── SimpleRestServer.java   # REST API server (port 3001)
 │   ├── models/                     # Data classes (8 POJO models)
 │   ├── dao/                        # Data access objects (CRUD)
 │   └── database/
 │       └── ConnectionManager.java  # JDBC connection management
-├── frontend/
+├── frontend-mock/
 │   ├── index.html                  # Dashboard
 │   ├── doctors.html                # Doctor CRUD
 │   ├── patients.html               # Patient management
@@ -230,12 +229,12 @@ Clinic/
 
 Compile everything (backend + REST API):
 ```powershell
-javac -encoding UTF-8 -cp Clinic/lib/postgresql-42.7.5.jar -d Clinic/target/classes `
-  Clinic/src/main/java/com/eclinic/*.java `
-  Clinic/src/main/java/com/eclinic/models/*.java `
-  Clinic/src/main/java/com/eclinic/database/*.java `
-  Clinic/src/main/java/com/eclinic/dao/*.java `
-  Clinic/src/main/java/com/eclinic/api/SimpleRestServer.java
+javac -encoding UTF-8 -cp lib/postgresql-42.7.5.jar -d target/classes `
+  src/main/java/com/eclinic/*.java `
+  src/main/java/com/eclinic/models/*.java `
+  src/main/java/com/eclinic/database/*.java `
+  src/main/java/com/eclinic/dao/*.java `
+  src/main/java/com/eclinic/api/SimpleRestServer.java
 ```
 
 ## Database Schema
@@ -250,7 +249,7 @@ javac -encoding UTF-8 -cp Clinic/lib/postgresql-42.7.5.jar -d Clinic/target/clas
 - **prescriptions** - Prescription headers
 - **prescription_details** - Line items for prescriptions
 
-To initialize the database, run the SQL from `Clinic/data/supabase-schema.sql` in your Supabase SQL Editor.
+To initialize the database, run the SQL from `data/supabase-schema.sql` in your Supabase SQL Editor.
 
 ## Example Workflow
 
@@ -284,17 +283,17 @@ To initialize the database, run the SQL from `Clinic/data/supabase-schema.sql` i
 ## Troubleshooting
 
 ### REST Server won't start
-- Ensure port 8080 is not in use: `netstat -an | findstr :8080`
+- Ensure port 3001 is not in use: `netstat -an | findstr :3001`
 - Check `.env` file has correct Supabase credentials
-- Verify PostgreSQL JDBC driver is in `Clinic/lib/`
+- Verify PostgreSQL JDBC driver is in `lib/`
 
 ### Frontend pages don't load
-- REST server must be running on localhost:8080
+- REST server must be running on localhost:3001
 - Check browser console for CORS errors
-- Verify REST server is listening: `curl http://localhost:8080/`
+- Verify REST server is listening: `curl http://localhost:3001/`
 
 ### Database operations fail
-- Run `Clinic/data/supabase-schema.sql` in Supabase SQL Editor first
+- Run `data/supabase-schema.sql` in Supabase SQL Editor first
 - Verify Supabase credentials in `.env`
 - Check Supabase session pooler is configured (not direct connection)
 

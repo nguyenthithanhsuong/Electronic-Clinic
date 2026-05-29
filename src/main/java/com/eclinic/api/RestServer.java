@@ -12,11 +12,11 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class RestServer {
-    private static int PORT = 8080;
+    private static int PORT = 3001;
     private static HttpServer server;
 
     public static void main(String[] args) throws Exception {
-        Map dotenv = loadDotEnv();
+        Map<String, String> dotenv = loadDotEnv();
 
         String dbUrl = getConfig(dotenv, "SUPABASE_DB_URL", "supabase.db.url");
         String dbUser = getConfig(dotenv, "SUPABASE_DB_USER", "supabase.db.user");
@@ -65,12 +65,9 @@ public class RestServer {
         System.out.println("REST API server started. Open http://localhost:" + PORT + " in browser.");
     }
 
-    private static Map loadDotEnv() {
-        Map env = new HashMap();
-        File dotenvFile = new File("Clinic/.env");
-        if (!dotenvFile.exists()) {
-            dotenvFile = new File(".env");
-        }
+    private static Map<String, String> loadDotEnv() {
+        Map<String, String> env = new HashMap<String, String>();
+        File dotenvFile = new File(".env");
         if (dotenvFile.exists()) {
             BufferedReader reader = null;
             try {
@@ -101,7 +98,7 @@ public class RestServer {
         return env;
     }
 
-    private static String getConfig(Map dotenv, String envKey, String systemPropertyKey) {
+    private static String getConfig(Map<String, String> dotenv, String envKey, String systemPropertyKey) {
         String val = System.getProperty(systemPropertyKey);
         if (!isBlank(val)) return val;
         val = System.getenv(envKey);

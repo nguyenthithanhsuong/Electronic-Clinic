@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 public class SimpleRestServer {
-    private static int PORT = 8081;
+    private static int PORT = 3001;
 
     public static void main(String[] args) throws Exception {
-        Map dotenv = loadDotEnv();
+        Map<String, String> dotenv = loadDotEnv();
 
         String dbUrl = getConfig(dotenv, "SUPABASE_DB_URL", "supabase.db.url");
         String dbUser = getConfig(dotenv, "SUPABASE_DB_USER", "supabase.db.user");
@@ -225,7 +225,7 @@ public class SimpleRestServer {
 
     private static String serveStaticFile(String path) throws Exception {
         if ("/".equals(path)) path = "/index.html";
-        File file = new File("Clinic/frontend" + path);
+        File file = new File("frontend-mock" + path);
         if (file.exists() && file.isFile()) {
             BufferedReader fr = new BufferedReader(new FileReader(file));
             StringBuilder sb = new StringBuilder();
@@ -263,10 +263,9 @@ public class SimpleRestServer {
         return json.substring(start, end);
     }
 
-    private static Map loadDotEnv() {
-        Map env = new HashMap();
-        File dotenvFile = new File("Clinic/.env");
-        if (!dotenvFile.exists()) dotenvFile = new File(".env");
+    private static Map<String, String> loadDotEnv() {
+        Map<String, String> env = new HashMap<String, String>();
+        File dotenvFile = new File(".env");
         if (dotenvFile.exists()) {
             BufferedReader reader = null;
             try {
@@ -290,7 +289,7 @@ public class SimpleRestServer {
         return env;
     }
 
-    private static String getConfig(Map dotenv, String envKey, String systemPropertyKey) {
+    private static String getConfig(Map<String, String> dotenv, String envKey, String systemPropertyKey) {
         String val = System.getProperty(systemPropertyKey);
         if (!isBlank(val)) return val;
         val = System.getenv(envKey);

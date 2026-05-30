@@ -10,13 +10,9 @@ import java.util.List;
 
 public class DashboardHandler extends BaseHandler {
 
-    public void handle(HttpExchange exchange) throws IOException {
+    protected void handleRequest(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
 
-        if ("OPTIONS".equals(method)) {
-            exchange.sendResponseHeaders(204, -1);
-            return;
-        }
 
         if (!"GET".equals(method)) {
             sendError(exchange, "Method not allowed", 405);

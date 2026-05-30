@@ -8,7 +8,7 @@ import java.io.OutputStream;
 
 public class StaticFileHandler extends BaseHandler {
 
-    public void handle(HttpExchange exchange) throws IOException {
+    protected void handleRequest(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         
         if ("/".equals(path)) {

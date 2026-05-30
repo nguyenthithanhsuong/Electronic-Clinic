@@ -8,14 +8,10 @@ import java.util.List;
 
 public class UsersHandler extends BaseHandler {
 
-    public void handle(HttpExchange exchange) throws IOException {
+    protected void handleRequest(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = normalizePath(exchange.getRequestURI().getPath());
 
-        if ("OPTIONS".equals(method)) {
-            exchange.sendResponseHeaders(204, -1);
-            return;
-        }
 
         UserDAO dao = new UserDAO();
 

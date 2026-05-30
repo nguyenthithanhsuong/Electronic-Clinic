@@ -9,14 +9,10 @@ import java.util.List;
 
 public class MedicinesHandler extends BaseHandler {
 
-    public void handle(HttpExchange exchange) throws IOException {
+    protected void handleRequest(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        if ("OPTIONS".equals(method)) {
-            exchange.sendResponseHeaders(204, -1);
-            return;
-        }
 
         MedicineDAO dao = new MedicineDAO();
 

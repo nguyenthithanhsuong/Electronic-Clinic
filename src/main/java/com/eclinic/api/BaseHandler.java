@@ -7,13 +7,27 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
 public abstract class BaseHandler implements HttpHandler {
-    
-    protected void sendJson(HttpExchange exchange, String json, int statusCode) throws IOException {
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
+
+    private void setCorsHeaders(HttpExchange exchange) {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
-        
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        setCorsHeaders(exchange);
+        if ("OPTIONS".equals(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(204, -1);
+            return;
+        }
+        handleRequest(exchange);
+    }
+
+    protected abstract void handleRequest(HttpExchange exchange) throws IOException;
+
+    protected void sendJson(HttpExchange exchange, String json, int statusCode) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
         byte[] response = json.getBytes("UTF-8");
         exchange.sendResponseHeaders(statusCode, response.length);
         OutputStream os = exchange.getResponseBody();

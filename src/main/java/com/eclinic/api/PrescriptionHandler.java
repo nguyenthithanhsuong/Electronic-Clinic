@@ -11,15 +11,11 @@ import java.util.List;
 
 public class PrescriptionHandler extends BaseHandler {
 
-    public void handle(HttpExchange exchange) throws IOException {
+    protected void handleRequest(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = normalizePath(exchange.getRequestURI().getPath());
         String query = exchange.getRequestURI().getQuery();
 
-        if ("OPTIONS".equals(method)) {
-            exchange.sendResponseHeaders(204, -1);
-            return;
-        }
 
         PrescriptionDAO dao = new PrescriptionDAO();
         PrescriptionDetailDAO detailDao = new PrescriptionDetailDAO();

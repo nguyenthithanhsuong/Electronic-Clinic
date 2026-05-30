@@ -37,6 +37,9 @@ public class RestServer {
         // Dashboard
         server.createContext("/api/dashboard", new DashboardHandler());
 
+        // Auth
+        server.createContext("/api/auth", new AuthHandler());
+
         // Users
         server.createContext("/api/users", new UsersHandler());
 
@@ -56,6 +59,12 @@ public class RestServer {
         // Prescriptions
         server.createContext("/api/prescriptions", new PrescriptionHandler());
         server.createContext("/api/prescriptions/details", new PrescriptionDetailHandler());
+
+        // Payments
+        server.createContext("/api/payments", new PaymentsHandler());
+
+        // Audit Log
+        server.createContext("/api/audit-log", new AuditLogHandler());
 
         // Static files (HTML, CSS, JS)
         server.createContext("/", new StaticFileHandler());

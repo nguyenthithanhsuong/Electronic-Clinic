@@ -10,6 +10,11 @@ public class ConnectionManager {
     private static String dbPassword;
 
     public static void init(String url, String user, String password) {
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("PostgreSQL driver not found on classpath", e);
+        }
         dbUrl = url;
         dbUser = user;
         dbPassword = password;

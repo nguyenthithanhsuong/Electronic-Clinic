@@ -66,6 +66,15 @@ public class RestServer {
         // Audit Log
         server.createContext("/api/audit-log", new AuditLogHandler());
 
+        // Notifications
+        server.createContext("/api/notifications", new NotificationsHandler());
+
+        // Prescription Templates
+        server.createContext("/api/prescription-templates", new PrescriptionTemplatesHandler());
+
+        // Email
+        server.createContext("/api/email", new EmailHandler());
+
         // Static files (HTML, CSS, JS)
         server.createContext("/", new StaticFileHandler());
 

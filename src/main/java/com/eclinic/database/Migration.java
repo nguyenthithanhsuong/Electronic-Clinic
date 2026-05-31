@@ -42,6 +42,34 @@ public class Migration {
             System.out.println("  ~ audit_logs error: " + e.getMessage());
         }
 
+        try {
+            stmt.execute("CREATE TABLE IF NOT EXISTS prescription_templates (" +
+                "id BIGSERIAL PRIMARY KEY, " +
+                "doctor_id BIGINT, " +
+                "name VARCHAR(200) NOT NULL, " +
+                "items JSONB NOT NULL DEFAULT '[]', " +
+                "created_at TIMESTAMP DEFAULT NOW()" +
+                ")");
+            System.out.println("  + Created prescription_templates table");
+        } catch (Exception e) {
+            System.out.println("  ~ prescription_templates error: " + e.getMessage());
+        }
+
+        try {
+            stmt.execute("CREATE TABLE IF NOT EXISTS notifications (" +
+                "id BIGSERIAL PRIMARY KEY, " +
+                "user_id BIGINT, " +
+                "type VARCHAR(50) NOT NULL, " +
+                "title VARCHAR(200) NOT NULL, " +
+                "message TEXT, " +
+                "is_read BOOLEAN DEFAULT FALSE, " +
+                "created_at TIMESTAMP DEFAULT NOW()" +
+                ")");
+            System.out.println("  + Created notifications table");
+        } catch (Exception e) {
+            System.out.println("  ~ notifications error: " + e.getMessage());
+        }
+
         stmt.close();
         ConnectionManager.closeConnection(conn);
         System.out.println("Migrations complete.");

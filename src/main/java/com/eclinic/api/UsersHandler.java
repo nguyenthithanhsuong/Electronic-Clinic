@@ -3,10 +3,22 @@ package com.eclinic.api;
 import com.sun.net.httpserver.HttpExchange;
 import com.eclinic.dao.UserDAO;
 import com.eclinic.models.User;
+import com.eclinic.util.PasswordUtil;
 import java.io.IOException;
 import java.util.List;
 
 public class UsersHandler extends BaseHandler {
+
+    /** POST (create user) is allowed without auth for registration/setup.
+     *  All other operations (GET, PUT, DELETE) require authentication. */
+    @Override
+    protected boolean requiresAuth() {
+        // This is evaluated in handle() before handleRequest(),
+        // but we need the exchange to check the method.
+        // Since requiresAuth() is called without exchange context,
+        // we return false here and enforce auth manually in handleRequest for non-POST.
+        return false;
+    }
 
     protected void handleRequest(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
@@ -16,6 +28,15 @@ public class UsersHandler extends BaseHandler {
         UserDAO dao = new UserDAO();
 
         try {
+            // Enforce auth for all methods except POST (user creation/registration)
+            if (!"POST".equals(method)) {
+                Long authUserId = getAuthUserId(exchange);
+                if (authUserId == null) {
+                    sendError(exchange, "Unauthorized — token không hợp lệ hoặc đã hết hạn", 401);
+                    return;
+                }
+            }
+
             if ("GET".equals(method)) {
                 if (path.startsWith("/api/users/")) {
                     long id = parseId(path, "/api/users/");
@@ -26,17 +47,17 @@ public class UsersHandler extends BaseHandler {
                         sendError(exchange, "User not found", 404);
                     }
                 } else {
-                    List users = dao.findAll();
+                    List<User> users = dao.findAll();
                     sendJson(exchange, listToJson(users), 200);
                 }
             } else if ("POST".equals(method)) {
                 String body = readBody(exchange);
                 String username = extractString(body, "username");
-                String passwordHash = extractString(body, "passwordHash");
+                String password = extractString(body, "password");
                 String role = extractString(body, "role");
                 String status = extractString(body, "status");
 
-                if (username.length() == 0 || passwordHash.length() == 0 || role.length() == 0) {
+                if (username.length() == 0 || password.length() == 0 || role.length() == 0) {
                     sendError(exchange, "Invalid user payload", 400);
                     return;
                 }
@@ -44,20 +65,26 @@ public class UsersHandler extends BaseHandler {
                     status = "ACTIVE";
                 }
 
-                long id = dao.create(username, passwordHash, role, status);
+                // Hash password with bcrypt before storing
+                String hashedPassword = PasswordUtil.hash(password);
+                long id = dao.create(username, hashedPassword, role, status);
                 sendJson(exchange, "{\"id\": " + id + ", \"status\": \"created\"}", 201);
             } else if ("PUT".equals(method)) {
                 long id = parseId(path, "/api/users/");
                 String body = readBody(exchange);
                 String role = extractString(body, "role");
                 String status = extractString(body, "status");
+                String password = extractString(body, "password");
 
-                if (role.length() == 0 || status.length() == 0) {
-                    sendError(exchange, "Invalid user payload", 400);
-                    return;
+                // Update role + status
+                boolean updated = dao.update(id, role, status);
+
+                // Update password if provided
+                if (password.length() > 0) {
+                    String hashedPassword = PasswordUtil.hash(password);
+                    dao.updatePassword(id, hashedPassword);
                 }
 
-                boolean updated = dao.update(id, role, status);
                 if (updated) {
                     sendJson(exchange, "{\"status\": \"updated\"}", 200);
                 } else {
@@ -81,23 +108,23 @@ public class UsersHandler extends BaseHandler {
         }
     }
 
+    /** Serialize user to JSON — passwordHash is NEVER included in responses. */
     private String toJson(User u) {
         if (u == null) return "null";
         return "{" +
             "\"id\": " + u.getId() + ", " +
             "\"username\": \"" + escapeJson(u.getUsername()) + "\", " +
-            "\"passwordHash\": \"" + escapeJson(u.getPasswordHash()) + "\", " +
             "\"role\": \"" + escapeJson(u.getRole()) + "\", " +
             "\"status\": \"" + escapeJson(u.getStatus()) + "\", " +
             "\"createdAt\": \"" + escapeJson(u.getCreatedAt()) + "\"" +
             "}";
     }
 
-    private String listToJson(List users) {
+    private String listToJson(List<User> users) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < users.size(); i++) {
             if (i > 0) sb.append(",");
-            sb.append(toJson((User) users.get(i)));
+            sb.append(toJson(users.get(i)));
         }
         sb.append("]");
         return sb.toString();

@@ -5,6 +5,7 @@ import com.eclinic.dao.PatientDAO;
 import com.eclinic.dao.UserDAO;
 import com.eclinic.models.Patient;
 import com.eclinic.models.User;
+import com.eclinic.util.PasswordUtil;
 import java.io.IOException;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class PatientsHandler extends BaseHandler {
                         sendError(exchange, "Patient not found", 404);
                     }
                 } else {
-                    List allPatients = dao.findAll();
+                    List<Patient> allPatients = dao.findAll();
                     String json = listToJson(allPatients);
                     sendJson(exchange, json, 200);
                 }
@@ -81,11 +82,14 @@ public class PatientsHandler extends BaseHandler {
                 if (userId != null) {
                     UserDAO userDAO = new UserDAO();
                     if (username != null && username.length() > 0 && password != null && password.length() > 0) {
-                        userDAO.updateUsernameAndPassword(userId, username, password);
+                        // Hash password before updating
+                        String hashedPassword = PasswordUtil.hash(password);
+                        userDAO.updateUsernameAndPassword(userId, username, hashedPassword);
                     } else if (username != null && username.length() > 0) {
                         userDAO.updateUsername(userId, username);
                     } else if (password != null && password.length() > 0) {
-                        userDAO.updatePassword(userId, password);
+                        String hashedPassword = PasswordUtil.hash(password);
+                        userDAO.updatePassword(userId, hashedPassword);
                     }
                 }
 
@@ -124,11 +128,11 @@ public class PatientsHandler extends BaseHandler {
             "}";
     }
 
-    private String listToJson(List patients) {
+    private String listToJson(List<Patient> patients) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < patients.size(); i++) {
             if (i > 0) sb.append(",");
-            sb.append(toJson((Patient) patients.get(i)));
+            sb.append(toJson(patients.get(i)));
         }
         sb.append("]");
         return sb.toString();
@@ -185,9 +189,21 @@ public class PatientsHandler extends BaseHandler {
         }
 
         String resolvedUsername = isBlank(username) ? generateUsername("patient", fullName, phone) : username;
-        String resolvedPassword = isBlank(password) ? "TEMP_HASH" : password;
+        // Hash password with bcrypt instead of storing plaintext/TEMP_HASH
+        String resolvedPassword = isBlank(password) ? PasswordUtil.hash(generateRandomPassword()) : PasswordUtil.hash(password);
         long createdUserId = userDAO.create(resolvedUsername, resolvedPassword, "PATIENT", "ACTIVE");
         return Long.valueOf(createdUserId);
+    }
+
+    /** Generate a secure random temporary password. */
+    private String generateRandomPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder sb = new StringBuilder();
+        java.security.SecureRandom rng = new java.security.SecureRandom();
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(rng.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     private String generateUsername(String prefix, String fullName, String fallback) {

@@ -24,3 +24,23 @@ target/
 hs_err_pid*
 replay_pid*
 
+# Environment variables — NEVER commit
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+out/
+build/

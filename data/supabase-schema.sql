@@ -124,3 +124,111 @@ CREATE INDEX IF NOT EXISTS idx_appointments_doctor_id ON appointments(doctor_id)
 CREATE INDEX IF NOT EXISTS idx_appointments_patient_id ON appointments(patient_id);
 CREATE INDEX IF NOT EXISTS idx_prescriptions_medical_record_id ON prescriptions(medical_record_id);
 CREATE INDEX IF NOT EXISTS idx_prescription_details_prescription_id ON prescription_details(prescription_id);
+
+-- ============================================================
+-- Audit log — tracks system events (login, CRUD actions, etc.)
+-- Referenced by: AuditLogDAO
+-- ============================================================
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    action VARCHAR(50) NOT NULL,
+    actor VARCHAR(100) NOT NULL,
+    target VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+
+-- ============================================================
+-- Notifications — in-app notifications for users
+-- Referenced by: NotificationsHandler
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(30) NOT NULL DEFAULT 'INFO',
+    title VARCHAR(200) NOT NULL,
+    message TEXT,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_notification_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
+
+-- ============================================================
+-- Prescription templates — saved templates for quick prescribing
+-- Referenced by: PrescriptionTemplatesHandler
+-- ============================================================
+CREATE TABLE IF NOT EXISTS prescription_templates (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    doctor_id BIGINT NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    items JSONB NOT NULL DEFAULT '[]',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_template_doctor
+        FOREIGN KEY (doctor_id)
+        REFERENCES doctors(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_prescription_templates_doctor_id ON prescription_templates(doctor_id);
+
+-- ============================================================
+-- Patient queue — walk-in and appointment queue management
+-- Referenced by: QueueHandler
+-- ============================================================
+CREATE TABLE IF NOT EXISTS patient_queue (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    patient_id BIGINT,
+    patient_name VARCHAR(200) NOT NULL,
+    medical_history_number VARCHAR(50),
+    appointment_id BIGINT,
+    source VARCHAR(20) NOT NULL DEFAULT 'WALK_IN'
+        CHECK (source IN ('WALK_IN', 'APPOINTMENT')),
+    status VARCHAR(20) NOT NULL DEFAULT 'WAITING'
+        CHECK (status IN ('WAITING', 'IN_PROGRESS', 'DONE', 'CANCELLED')),
+    enqueued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_queue_patient
+        FOREIGN KEY (patient_id)
+        REFERENCES patients(id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_queue_appointment
+        FOREIGN KEY (appointment_id)
+        REFERENCES appointments(id)
+        ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_patient_queue_status ON patient_queue(status);
+CREATE INDEX IF NOT EXISTS idx_patient_queue_enqueued_at ON patient_queue(enqueued_at);
+
+-- ============================================================
+-- Payments — prescription payment tracking
+-- Referenced by: PaymentsHandler
+-- ============================================================
+CREATE TABLE IF NOT EXISTS payments (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    prescription_id BIGINT NOT NULL,
+    amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    payment_method VARCHAR(30) DEFAULT 'CASH'
+        CHECK (payment_method IN ('CASH', 'CARD', 'INSURANCE', 'OTHER')),
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (payment_status IN ('PENDING', 'CONFIRMED', 'REFUNDED', 'CANCELLED')),
+    paid_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_payment_prescription
+        FOREIGN KEY (prescription_id)
+        REFERENCES prescriptions(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_prescription_id ON payments(prescription_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(payment_status);

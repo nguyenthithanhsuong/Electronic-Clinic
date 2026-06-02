@@ -4,10 +4,17 @@ import com.sun.net.httpserver.HttpExchange;
 import com.eclinic.dao.UserDAO;
 import com.eclinic.dao.AuditLogDAO;
 import com.eclinic.models.User;
+import com.eclinic.util.PasswordUtil;
+import com.eclinic.util.JwtUtil;
 import java.io.IOException;
-import java.util.Base64;
 
 public class AuthHandler extends BaseHandler {
+
+    /** Login endpoint does NOT require authentication. */
+    @Override
+    protected boolean requiresAuth() {
+        return false;
+    }
 
     protected void handleRequest(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
@@ -40,7 +47,8 @@ public class AuthHandler extends BaseHandler {
                 return;
             }
 
-            if (!user.getPasswordHash().equals(password)) {
+            // Use bcrypt-aware password check (with legacy plaintext fallback)
+            if (!PasswordUtil.check(password, user.getPasswordHash())) {
                 sendJson(exchange, "{\"success\": false, \"message\": \"Mật khẩu không đúng\"}", 401);
                 return;
             }
@@ -50,9 +58,16 @@ public class AuthHandler extends BaseHandler {
                 return;
             }
 
-            String token = Base64.getEncoder().encodeToString(
-                (user.getId() + ":" + System.currentTimeMillis()).getBytes()
-            );
+            // Migrate legacy plaintext password to bcrypt on successful login
+            if (!PasswordUtil.isBcrypt(user.getPasswordHash())) {
+                try {
+                    String bcryptHash = PasswordUtil.hash(password);
+                    userDAO.updatePassword(user.getId(), bcryptHash);
+                } catch (Exception ignored) {}
+            }
+
+            // Generate proper JWT token instead of Base64
+            String token = JwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
 
             String roleForFrontend = mapRole(user.getRole());
 

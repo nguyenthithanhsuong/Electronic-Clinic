@@ -59,8 +59,7 @@ public class PrescriptionHandler extends BaseHandler {
                 String body = readBody(exchange);
                 long medicalRecordId = extractLong(body, "medicalRecordId");
                 String notes = extractString(body, "notes");
-                String totalPriceStr = extractString(body, "totalPrice");
-                BigDecimal totalPrice = !totalPriceStr.isEmpty() ? new BigDecimal(totalPriceStr) : BigDecimal.ZERO;
+                BigDecimal totalPrice = extractBigDecimal(body, "totalPrice");
 
                 long id = dao.create(medicalRecordId, notes, totalPrice);
                 String json = "{\"id\": " + id + ", \"status\": \"created\"}";
@@ -71,8 +70,7 @@ public class PrescriptionHandler extends BaseHandler {
                 long id = parseId(path, "/api/prescriptions/");
                 String body = readBody(exchange);
                 String notes = extractString(body, "notes");
-                String totalPriceStr = extractString(body, "totalPrice");
-                BigDecimal totalPrice = !totalPriceStr.isEmpty() ? new BigDecimal(totalPriceStr) : BigDecimal.ZERO;
+                BigDecimal totalPrice = extractBigDecimal(body, "totalPrice");
 
                 boolean updated = dao.update(id, notes, totalPrice);
                 if (updated) {
@@ -160,6 +158,24 @@ public class PrescriptionHandler extends BaseHandler {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    /** Extract a BigDecimal value that may be quoted ("totalPrice":"123.45") or unquoted ("totalPrice":123.45). */
+    private BigDecimal extractBigDecimal(String json, String key) {
+        // Try quoted string format first
+        String strVal = extractString(json, key);
+        if (!strVal.isEmpty()) {
+            try { return new BigDecimal(strVal); } catch (Exception ignored) {}
+        }
+        // Try unquoted numeric format
+        String search = "\"" + key + "\":";
+        int idx = json.indexOf(search);
+        if (idx == -1) return BigDecimal.ZERO;
+        int start = idx + search.length();
+        int end = json.indexOf(",", start);
+        if (end == -1) end = json.indexOf("}", start);
+        String raw = json.substring(start, end).trim();
+        try { return new BigDecimal(raw); } catch (Exception e) { return BigDecimal.ZERO; }
     }
 
     private String extractString(String json, String key) {

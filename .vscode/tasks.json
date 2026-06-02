@@ -38,7 +38,7 @@
         "-ExecutionPolicy",
         "Bypass",
         "-Command",
-        "$sources = Get-ChildItem -Path 'src/main/java' -Recurse -Filter '*.java' | ForEach-Object { $_.FullName }; javac -encoding UTF-8 -cp 'lib/postgresql-42.7.5.jar' -d 'target/classes' $sources"
+        "$sources = Get-ChildItem -Path 'src/main/java' -Recurse -Filter '*.java' | ForEach-Object { $_.FullName }; javac -encoding UTF-8 -cp 'lib/postgresql-42.7.5.jar;lib/jbcrypt-0.4.jar;lib/jjwt-0.9.1.jar;lib/jackson-databind-2.12.7.1.jar;lib/jackson-core-2.12.7.jar;lib/jackson-annotations-2.12.7.jar;lib/jaxb-api-2.3.1.jar;lib/jaxb-runtime-2.3.3.jar' -d 'target/classes' $sources"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -46,13 +46,13 @@
       "group": "build"
     },
     {
-      "label": "Run Clinic App",
+      "label": "Run Clinic REST Server",
       "type": "shell",
       "command": "java",
       "args": [
         "-cp",
-        "target/classes;lib/postgresql-42.7.5.jar",
-        "com.eclinic.App"
+        "target/classes;lib/postgresql-42.7.5.jar;lib/jbcrypt-0.4.jar;lib/jjwt-0.9.1.jar;lib/jackson-databind-2.12.7.1.jar;lib/jackson-core-2.12.7.jar;lib/jackson-annotations-2.12.7.jar;lib/jaxb-api-2.3.1.jar;lib/jaxb-runtime-2.3.3.jar",
+        "com.eclinic.api.RestServer"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

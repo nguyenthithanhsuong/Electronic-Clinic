@@ -8,6 +8,12 @@ import java.io.OutputStream;
 
 public class StaticFileHandler extends BaseHandler {
 
+    /** Static files do NOT require authentication. */
+    @Override
+    protected boolean requiresAuth() {
+        return false;
+    }
+
     protected void handleRequest(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         

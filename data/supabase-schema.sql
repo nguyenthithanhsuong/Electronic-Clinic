@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS medical_records (
     symptoms TEXT NOT NULL,
     diagnosis TEXT NOT NULL,
     record_type VARCHAR(50) NOT NULL
-        CHECK (record_type IN ('GENERAL', 'EMERGENCY', 'DENTAL')),
+        CHECK (record_type IN ('GENERAL', 'EMERGENCY', 'DENTAL', 'PEDIATRICS', 'CARDIOLOGY', 'DERMATOLOGY')),
     treatment_plan TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 

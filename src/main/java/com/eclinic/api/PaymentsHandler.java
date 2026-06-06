@@ -37,14 +37,16 @@ public class PaymentsHandler extends BaseHandler {
     }
 
     private void handleGetAll(HttpExchange exchange) throws Exception {
-        String sql = "SELECT p.id, p.medical_record_id, p.total_price, p.payment_status, p.paid_at, p.created_at, " +
+        String sql = "SELECT pay.id, pay.amount, pay.payment_status, pay.payment_method, pay.paid_at, pay.created_at, " +
+            "pres.id as prescription_id, pres.medical_record_id, pres.total_price, " +
             "pat.full_name as patient_name, d.full_name as doctor_name " +
-            "FROM prescriptions p " +
-            "LEFT JOIN medical_records mr ON p.medical_record_id = mr.id " +
+            "FROM payments pay " +
+            "JOIN prescriptions pres ON pay.prescription_id = pres.id " +
+            "LEFT JOIN medical_records mr ON pres.medical_record_id = mr.id " +
             "LEFT JOIN appointments a ON mr.appointment_id = a.id " +
             "LEFT JOIN patients pat ON a.patient_id = pat.id " +
             "LEFT JOIN doctors d ON a.doctor_id = d.id " +
-            "ORDER BY p.created_at DESC";
+            "ORDER BY pay.created_at DESC";
 
         Connection conn = ConnectionManager.getConnection();
         try {
@@ -60,28 +62,33 @@ public class PaymentsHandler extends BaseHandler {
                 if (!first) sb.append(",");
                 first = false;
 
-                long id = rs.getLong("id");
+                long paymentId = rs.getLong("id");
+                long prescriptionId = rs.getLong("prescription_id");
                 String patientName = rs.getString("patient_name");
                 String doctorName = rs.getString("doctor_name");
                 double totalPrice = rs.getDouble("total_price");
+                double amount = rs.getDouble("amount");
                 String status = rs.getString("payment_status");
+                String paymentMethod = rs.getString("payment_method");
                 String paidAt = rs.getString("paid_at");
                 String createdAt = rs.getString("created_at");
 
                 if (patientName == null) patientName = "N/A";
                 if (doctorName == null) doctorName = "N/A";
-                if (status == null) status = "UNPAID";
+                if (status == null) status = "PENDING";
 
-                List details = detailDao.findByPrescriptionId(id);
+                List details = detailDao.findByPrescriptionId(prescriptionId);
                 String itemsJson = buildItemsJson(details, medDao);
 
                 sb.append("{");
-                sb.append("\"id\": ").append(id).append(", ");
-                sb.append("\"prescriptionId\": ").append(id).append(", ");
+                sb.append("\"id\": ").append(paymentId).append(", ");
+                sb.append("\"prescriptionId\": ").append(prescriptionId).append(", ");
                 sb.append("\"patientName\": \"").append(escapeJson(patientName)).append("\", ");
                 sb.append("\"doctorName\": \"").append(escapeJson(doctorName)).append("\", ");
                 sb.append("\"totalPrice\": ").append(totalPrice).append(", ");
+                sb.append("\"amount\": ").append(amount).append(", ");
                 sb.append("\"status\": \"").append(status).append("\", ");
+                sb.append("\"paymentMethod\": \"").append(paymentMethod != null ? paymentMethod : "CASH").append("\", ");
                 sb.append("\"createdAt\": \"").append(escapeJson(createdAt)).append("\", ");
                 if (paidAt != null) {
                     sb.append("\"paidAt\": \"").append(escapeJson(paidAt)).append("\", ");
@@ -98,21 +105,44 @@ public class PaymentsHandler extends BaseHandler {
     }
 
     private void handleConfirm(HttpExchange exchange, long id) throws Exception {
-        String sql = "UPDATE prescriptions SET payment_status = 'PAID', paid_at = NOW() WHERE id = ? AND (payment_status IS NULL OR payment_status = 'UNPAID')";
+        // id is the prescription_id — upsert into payments table
+        String checkSql = "SELECT id, payment_status FROM payments WHERE prescription_id = ?";
         Connection conn = ConnectionManager.getConnection();
         try {
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
-            int rows = stmt.executeUpdate();
-            if (rows > 0) {
-                try {
-                    AuditLogDAO auditDAO = new AuditLogDAO();
-                    auditDAO.log("CONFIRM_PAYMENT", "admin", "Hóa đơn #" + id);
-                } catch (Exception ignored) {}
-                sendJson(exchange, "{\"status\": \"confirmed\"}", 200);
+            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setLong(1, id);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next()) {
+                // Payment record exists — update if not already confirmed
+                long payId = rs.getLong("id");
+                String currentStatus = rs.getString("payment_status");
+                if ("CONFIRMED".equals(currentStatus)) {
+                    sendError(exchange, "Payment already confirmed", 409);
+                    return;
+                }
+                String updateSql = "UPDATE payments SET payment_status = 'CONFIRMED', paid_at = NOW() WHERE id = ?";
+                PreparedStatement updateStmt = conn.prepareStatement(updateSql);
+                updateStmt.setLong(1, payId);
+                updateStmt.executeUpdate();
             } else {
-                sendError(exchange, "Payment not found or already paid", 404);
+                // No payment record yet — create one as CONFIRMED
+                String insertSql = "INSERT INTO payments (prescription_id, amount, payment_status, paid_at) " +
+                    "SELECT id, total_price, 'CONFIRMED', NOW() FROM prescriptions WHERE id = ?";
+                PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+                insertStmt.setLong(1, id);
+                int rows = insertStmt.executeUpdate();
+                if (rows == 0) {
+                    sendError(exchange, "Prescription not found", 404);
+                    return;
+                }
             }
+
+            try {
+                AuditLogDAO auditDAO = new AuditLogDAO();
+                auditDAO.log("CONFIRM_PAYMENT", "admin", "Hóa đơn thuốc #" + id);
+            } catch (Exception ignored) {}
+            sendJson(exchange, "{\"status\": \"confirmed\"}", 200);
         } finally {
             ConnectionManager.closeConnection(conn);
         }

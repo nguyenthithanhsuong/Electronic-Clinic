@@ -80,14 +80,31 @@ CREATE TABLE IF NOT EXISTS medical_records (
         ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS medicine_categories (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    name_vi VARCHAR(100),
+    description TEXT,
+    display_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS medicines (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
     unit VARCHAR(20) NOT NULL,
     price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     stock_quantity INT NOT NULL DEFAULT 0,
-    expiry_date TIMESTAMP NOT NULL
+    expiry_date TIMESTAMP NOT NULL,
+    category_id BIGINT,
+
+    CONSTRAINT fk_medicine_category
+        FOREIGN KEY (category_id)
+        REFERENCES medicine_categories(id)
+        ON DELETE SET NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_medicines_category_id ON medicines(category_id);
 
 CREATE TABLE IF NOT EXISTS prescriptions (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

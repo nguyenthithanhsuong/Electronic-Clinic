@@ -3,10 +3,15 @@ package com.eclinic.api;
 import com.sun.net.httpserver.HttpExchange;
 import com.eclinic.dao.PrescriptionDAO;
 import com.eclinic.dao.PrescriptionDetailDAO;
+import com.eclinic.dao.AuditLogDAO;
+import com.eclinic.database.ConnectionManager;
 import com.eclinic.models.Prescription;
 import com.eclinic.models.PrescriptionDetail;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
 public class PrescriptionHandler extends BaseHandler {
@@ -62,10 +67,18 @@ public class PrescriptionHandler extends BaseHandler {
                 long medicalRecordId = extractLong(body, "medicalRecordId");
                 String notes = extractString(body, "notes");
                 BigDecimal totalPrice = extractBigDecimal(body, "totalPrice");
+                if (medicalRecordId <= 0 || !medicalRecordExists(medicalRecordId)) {
+                    sendError(exchange, "Medical record not found", 404);
+                    return;
+                }
+                if (totalPrice.compareTo(BigDecimal.ZERO) < 0) {
+                    sendError(exchange, "totalPrice must be greater than or equal to 0", 400);
+                    return;
+                }
 
                 long id = dao.create(medicalRecordId, notes, totalPrice);
-                String json = "{\"id\": " + id + ", \"status\": \"created\"}";
-                sendJson(exchange, json, 201);
+                logAudit(exchange, "CREATE_PRESCRIPTION", "prescription #" + id + " medical_record #" + medicalRecordId);
+                sendJson(exchange, toJsonWithDetails(dao.findById(id), detailDao.findByPrescriptionId(id)), 201);
             }
             // PUT /api/prescriptions/ID - update prescription
             else if ("PUT".equals(method)) {
@@ -148,6 +161,19 @@ public class PrescriptionHandler extends BaseHandler {
         return sb.toString();
     }
 
+    private boolean medicalRecordExists(long medicalRecordId) throws Exception {
+        String sql = "SELECT 1 FROM medical_records WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setLong(1, medicalRecordId);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
+    }
+
     private long extractLong(String json, String key) {
         String search = "\"" + key + "\":";
         int idx = json.indexOf(search);
@@ -214,5 +240,12 @@ public class PrescriptionHandler extends BaseHandler {
             }
         }
         return 0;
+    }
+
+    private void logAudit(HttpExchange exchange, String action, String target) {
+        try {
+            String actor = getAuthRole(exchange) + ":" + getAuthUserId(exchange);
+            new AuditLogDAO().log(action, actor, target);
+        } catch (Exception ignored) {}
     }
 }

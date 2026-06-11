@@ -41,16 +41,18 @@ public class PaymentsHandler extends BaseHandler {
     }
 
     private void handleGetAll(HttpExchange exchange) throws Exception {
-        String sql = "SELECT pay.id, pay.amount, pay.payment_status, pay.payment_method, pay.paid_at, pay.created_at, " +
+        String sql = "SELECT pay.id AS payment_id, COALESCE(pay.amount, pres.total_price) AS amount, " +
+            "COALESCE(pay.payment_status, 'PENDING') AS payment_status, COALESCE(pay.payment_method, 'CASH') AS payment_method, " +
+            "pay.paid_at, COALESCE(pay.created_at, pres.created_at) AS payment_created_at, " +
             "pres.id as prescription_id, pres.medical_record_id, pres.total_price, " +
             "pat.full_name as patient_name, d.full_name as doctor_name " +
-            "FROM payments pay " +
-            "JOIN prescriptions pres ON pay.prescription_id = pres.id " +
+            "FROM prescriptions pres " +
+            "LEFT JOIN payments pay ON pay.prescription_id = pres.id " +
             "LEFT JOIN medical_records mr ON pres.medical_record_id = mr.id " +
             "LEFT JOIN appointments a ON mr.appointment_id = a.id " +
             "LEFT JOIN patients pat ON a.patient_id = pat.id " +
             "LEFT JOIN doctors d ON a.doctor_id = d.id " +
-            "ORDER BY pay.created_at DESC";
+            "ORDER BY COALESCE(pay.created_at, pres.created_at) DESC";
 
         Connection conn = ConnectionManager.getConnection();
         try {
@@ -66,8 +68,9 @@ public class PaymentsHandler extends BaseHandler {
                 if (!first) sb.append(",");
                 first = false;
 
-                long paymentId = rs.getLong("id");
                 long prescriptionId = rs.getLong("prescription_id");
+                long paymentId = rs.getLong("payment_id");
+                if (rs.wasNull()) paymentId = prescriptionId;
                 String patientName = rs.getString("patient_name");
                 String doctorName = rs.getString("doctor_name");
                 double totalPrice = rs.getDouble("total_price");
@@ -75,7 +78,7 @@ public class PaymentsHandler extends BaseHandler {
                 String status = rs.getString("payment_status");
                 String paymentMethod = rs.getString("payment_method");
                 String paidAt = rs.getString("paid_at");
-                String createdAt = rs.getString("created_at");
+                String createdAt = rs.getString("payment_created_at");
 
                 if (patientName == null) patientName = "N/A";
                 if (doctorName == null) doctorName = "N/A";

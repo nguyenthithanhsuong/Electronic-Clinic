@@ -33,6 +33,17 @@ if (-not $sources -or $sources.Count -eq 0) {
     exit 1
 }
 
+# Build dynamic classpath from lib folder
+$classpath = (
+    Get-ChildItem lib -Filter *.jar |
+    ForEach-Object { $_.FullName }
+) -join ';'
+
+if ([string]::IsNullOrWhiteSpace($classpath)) {
+    Write-Error 'No JAR files found in lib folder. Run: mvn dependency:copy-dependencies -DoutputDirectory=lib'
+    exit 1
+}
+
 $listenLine = netstat -ano | Select-String -Pattern ':3001\s+.*LISTENING\s+\d+$' | Select-Object -First 1
 if ($listenLine) {
     $existingPid = ($listenLine.Line -split '\s+')[-1]
@@ -46,11 +57,11 @@ if ($listenLine) {
 }
 
 Write-Host 'Compiling Clinic sources...'
-& $javac -encoding UTF-8 -cp 'lib/postgresql-42.7.5.jar;lib/jbcrypt-0.4.jar;lib/jjwt-0.9.1.jar;lib/jackson-databind-2.12.7.1.jar;lib/jackson-core-2.12.7.jar;lib/jackson-annotations-2.12.7.jar;lib/jaxb-api-2.3.1.jar;lib/jaxb-runtime-2.3.3.jar' -d 'target/classes' $sources
+& $javac -encoding UTF-8 -cp $classpath -d 'target/classes' $sources
 if ($LASTEXITCODE -ne 0) {
     Write-Error 'Compilation failed.'
     exit $LASTEXITCODE
 }
 
 Write-Host 'Starting Clinic REST server at http://localhost:3001'
-& $java -cp 'target/classes;lib/postgresql-42.7.5.jar;lib/jbcrypt-0.4.jar;lib/jjwt-0.9.1.jar;lib/jackson-databind-2.12.7.1.jar;lib/jackson-core-2.12.7.jar;lib/jackson-annotations-2.12.7.jar;lib/jaxb-api-2.3.1.jar;lib/jaxb-runtime-2.3.3.jar' com.eclinic.api.RestServer
+& $java -cp "target/classes;$classpath" com.eclinic.api.RestServer

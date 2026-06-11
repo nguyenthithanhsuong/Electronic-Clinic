@@ -53,7 +53,7 @@ public class AuthHandler extends BaseHandler {
                 return;
             }
 
-            if ("LOCKED".equals(user.getStatus())) {
+            if ("BLOCKED".equalsIgnoreCase(user.getStatus())) {
                 sendJson(exchange, "{\"success\": false, \"message\": \"Tài khoản đã bị khóa\"}", 403);
                 return;
             }
@@ -69,8 +69,6 @@ public class AuthHandler extends BaseHandler {
             // Generate proper JWT token instead of Base64
             String token = JwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
 
-            String roleForFrontend = mapRole(user.getRole());
-
             String json = "{" +
                 "\"success\": true, " +
                 "\"message\": \"Đăng nhập thành công\", " +
@@ -79,7 +77,7 @@ public class AuthHandler extends BaseHandler {
                     "\"username\": \"" + escapeJson(user.getUsername()) + "\", " +
                     "\"fullName\": \"" + escapeJson(user.getUsername()) + "\", " +
                     "\"email\": \"\", " +
-                    "\"role\": \"" + roleForFrontend + "\", " +
+                    "\"role\": \"" + escapeJson(user.getRole()) + "\", " +
                     "\"createdAt\": \"" + escapeJson(user.getCreatedAt()) + "\"" +
                 "}, " +
                 "\"token\": \"" + token + "\"" +
@@ -95,16 +93,6 @@ public class AuthHandler extends BaseHandler {
 
         } catch (Exception e) {
             sendError(exchange, e.getMessage(), 500);
-        }
-    }
-
-    private String mapRole(String dbRole) {
-        if (dbRole == null) return "RECEPTIONIST";
-        switch (dbRole.toUpperCase()) {
-            case "ADMIN": return "ADMIN";
-            case "DOCTOR": return "DOCTOR";
-            case "RECEPTIONIST": return "RECEPTIONIST";
-            default: return "RECEPTIONIST";
         }
     }
 

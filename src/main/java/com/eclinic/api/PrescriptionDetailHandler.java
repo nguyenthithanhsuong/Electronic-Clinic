@@ -2,8 +2,12 @@ package com.eclinic.api;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.eclinic.dao.PrescriptionDetailDAO;
+import com.eclinic.database.ConnectionManager;
 import com.eclinic.models.PrescriptionDetail;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
 public class PrescriptionDetailHandler extends BaseHandler {
@@ -50,10 +54,25 @@ public class PrescriptionDetailHandler extends BaseHandler {
                 long medicineId = extractLong(body, "medicineId");
                 int quantity = (int) extractLong(body, "quantity");
                 String dosage = extractString(body, "dosage");
+                if (!exists("prescriptions", prescriptionId)) {
+                    sendError(exchange, "Prescription not found", 404);
+                    return;
+                }
+                if (!exists("medicines", medicineId)) {
+                    sendError(exchange, "Medicine not found", 404);
+                    return;
+                }
+                if (quantity <= 0) {
+                    sendError(exchange, "quantity must be greater than 0", 400);
+                    return;
+                }
+                if (dosage.length() == 0) {
+                    sendError(exchange, "dosage is required", 400);
+                    return;
+                }
 
                 long id = dao.create(prescriptionId, medicineId, quantity, dosage);
-                String json = "{\"id\": " + id + ", \"status\": \"created\"}";
-                sendJson(exchange, json, 201);
+                sendJson(exchange, toJson(dao.findById(id)), 201);
             }
             // PUT /api/prescriptions/details/ID - update detail
             else if ("PUT".equals(method)) {
@@ -105,6 +124,20 @@ public class PrescriptionDetailHandler extends BaseHandler {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    private boolean exists(String table, long id) throws Exception {
+        if (id <= 0) return false;
+        String sql = "SELECT 1 FROM " + table + " WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setLong(1, id);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
     }
 
     private long extractLong(String json, String key) {

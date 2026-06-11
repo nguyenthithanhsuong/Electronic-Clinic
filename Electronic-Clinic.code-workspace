@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../emr-system-frontend"
+		}
+	],
+	"settings": {
+		"chat.tools.terminal.autoApprove": {
+			"mvn -q compile": true
+		}
+	}
+}

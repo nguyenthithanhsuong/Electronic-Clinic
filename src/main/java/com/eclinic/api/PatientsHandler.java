@@ -3,6 +3,7 @@ package com.eclinic.api;
 import com.sun.net.httpserver.HttpExchange;
 import com.eclinic.dao.PatientDAO;
 import com.eclinic.dao.UserDAO;
+import com.eclinic.dao.AuditLogDAO;
 import com.eclinic.models.Patient;
 import com.eclinic.models.User;
 import com.eclinic.util.PasswordUtil;
@@ -50,7 +51,7 @@ public class PatientsHandler extends BaseHandler {
                 String address = extractString(body, "address");
                 String insuranceCode = extractString(body, "insuranceCode");
 
-                if (fullName.length() == 0 || dob.length() == 0 || gender.length() == 0 || phone.length() == 0 || address.length() == 0 || insuranceCode.length() == 0) {
+                if (fullName.length() == 0 || dob.length() == 0 || gender.length() == 0 || phone.length() == 0) {
                     sendError(exchange, "Invalid patient payload", 400);
                     return;
                 }
@@ -58,8 +59,8 @@ public class PatientsHandler extends BaseHandler {
                 Long userId = resolveOrCreatePatientUserId(requestedUserId, username, password, fullName, phone);
 
                 long id = dao.create(userId, fullName, dob, gender, phone, address, insuranceCode);
-                String json = "{\"id\": " + id + ", \"status\": \"created\"}";
-                sendJson(exchange, json, 201);
+                logAudit(exchange, "CREATE_PATIENT", "patient #" + id);
+                sendJson(exchange, toJson(dao.findById(id)), 201);
             } else if ("PUT".equals(method)) {
                 long id = Long.parseLong(path.substring(14));
                 String body = readBody(exchange);
@@ -228,5 +229,12 @@ public class PatientsHandler extends BaseHandler {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().length() == 0;
+    }
+
+    private void logAudit(HttpExchange exchange, String action, String target) {
+        try {
+            String actor = getAuthRole(exchange) + ":" + getAuthUserId(exchange);
+            new AuditLogDAO().log(action, actor, target);
+        } catch (Exception ignored) {}
     }
 }

@@ -50,20 +50,53 @@ public class UsersHandler extends BaseHandler {
                     sendError(exchange, "Invalid user payload", 400);
                     return;
                 }
+                role = role.toUpperCase();
+                if (!isValidRole(role)) {
+                    sendError(exchange, "Invalid role: must be one of [ADMIN, DOCTOR, RECEPTIONIST, PATIENT]", 400);
+                    return;
+                }
                 if (status.length() == 0) {
                     status = "ACTIVE";
+                }
+                status = status.toUpperCase();
+                if (!isValidStatus(status)) {
+                    sendError(exchange, "Invalid status: must be one of [ACTIVE, INACTIVE, BLOCKED]", 400);
+                    return;
                 }
 
                 // Hash password with bcrypt before storing
                 String hashedPassword = PasswordUtil.hash(password);
                 long id = dao.create(username, hashedPassword, role, status);
-                sendJson(exchange, "{\"id\": " + id + ", \"status\": \"created\"}", 201);
+                sendJson(exchange, toJson(dao.findById(id)), 201);
             } else if ("PUT".equals(method)) {
                 long id = parseId(path, "/api/users/");
                 String body = readBody(exchange);
                 String role = extractString(body, "role");
                 String status = extractString(body, "status");
                 String password = extractString(body, "password");
+                User existing = dao.findById(id);
+                if (existing == null) {
+                    sendError(exchange, "User not found", 404);
+                    return;
+                }
+                if (role.length() == 0) {
+                    role = existing.getRole();
+                } else {
+                    role = role.toUpperCase();
+                    if (!isValidRole(role)) {
+                        sendError(exchange, "Invalid role: must be one of [ADMIN, DOCTOR, RECEPTIONIST, PATIENT]", 400);
+                        return;
+                    }
+                }
+                if (status.length() == 0) {
+                    status = existing.getStatus();
+                } else {
+                    status = status.toUpperCase();
+                    if (!isValidStatus(status)) {
+                        sendError(exchange, "Invalid status: must be one of [ACTIVE, INACTIVE, BLOCKED]", 400);
+                        return;
+                    }
+                }
 
                 // Update role + status
                 boolean updated = dao.update(id, role, status);
@@ -75,7 +108,7 @@ public class UsersHandler extends BaseHandler {
                 }
 
                 if (updated) {
-                    sendJson(exchange, "{\"status\": \"updated\"}", 200);
+                    sendJson(exchange, toJson(dao.findById(id)), 200);
                 } else {
                     sendError(exchange, "User not found", 404);
                 }
@@ -117,6 +150,14 @@ public class UsersHandler extends BaseHandler {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    private boolean isValidRole(String role) {
+        return "ADMIN".equals(role) || "DOCTOR".equals(role) || "RECEPTIONIST".equals(role) || "PATIENT".equals(role);
+    }
+
+    private boolean isValidStatus(String status) {
+        return "ACTIVE".equals(status) || "INACTIVE".equals(status) || "BLOCKED".equals(status);
     }
 
     private String extractString(String json, String key) {

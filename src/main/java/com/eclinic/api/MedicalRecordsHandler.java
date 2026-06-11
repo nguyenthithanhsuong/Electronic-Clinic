@@ -1,9 +1,14 @@
 package com.eclinic.api;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.eclinic.dao.AuditLogDAO;
 import com.eclinic.dao.MedicalRecordDAO;
+import com.eclinic.database.ConnectionManager;
 import com.eclinic.models.MedicalRecord;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
 public class MedicalRecordsHandler extends BaseHandler {
@@ -50,10 +55,26 @@ public class MedicalRecordsHandler extends BaseHandler {
                 String diagnosis = extractString(body, "diagnosis");
                 String recordType = extractString(body, "recordType");
                 String treatmentPlan = extractString(body, "treatmentPlan");
+                if (symptoms.length() == 0 || diagnosis.length() == 0) {
+                    sendError(exchange, "symptoms and diagnosis are required", 400);
+                    return;
+                }
+                if (recordType.length() == 0) recordType = "GENERAL";
+                if (appointmentId != null && !appointmentExists(appointmentId.longValue())) {
+                    sendError(exchange, "Appointment not found", 404);
+                    return;
+                }
+                if (appointmentId != null) {
+                    MedicalRecord existing = dao.findByAppointmentId(appointmentId.longValue());
+                    if (existing != null) {
+                        sendJson(exchange, toJson(existing), 200);
+                        return;
+                    }
+                }
 
                 long id = dao.create(appointmentId, symptoms, diagnosis, recordType, treatmentPlan);
-                String json = "{\"id\": " + id + ", \"status\": \"created\"}";
-                sendJson(exchange, json, 201);
+                logAudit(exchange, "CREATE_MEDICAL_RECORD", "medical_record #" + id + " appointment #" + appointmentId);
+                sendJson(exchange, toJson(dao.findById(id)), 201);
             } else if ("PUT".equals(method)) {
                 long id = parseId(path, "/api/patients/medical-records/");
                 String body = readBody(exchange);
@@ -103,6 +124,19 @@ public class MedicalRecordsHandler extends BaseHandler {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    private boolean appointmentExists(long appointmentId) throws Exception {
+        String sql = "SELECT 1 FROM appointments WHERE id = ?";
+        Connection conn = ConnectionManager.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setLong(1, appointmentId);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } finally {
+            ConnectionManager.closeConnection(conn);
+        }
     }
 
     private long extractLong(String json, String key) {
@@ -176,5 +210,12 @@ public class MedicalRecordsHandler extends BaseHandler {
             }
         }
         return 0;
+    }
+
+    private void logAudit(HttpExchange exchange, String action, String target) {
+        try {
+            String actor = getAuthRole(exchange) + ":" + getAuthUserId(exchange);
+            new AuditLogDAO().log(action, actor, target);
+        } catch (Exception ignored) {}
     }
 }

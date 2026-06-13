@@ -114,6 +114,15 @@ public class PatientsHandler extends BaseHandler {
             }
         } catch (IllegalArgumentException e) {
             sendError(exchange, e.getMessage(), 400);
+        } catch (java.sql.SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("patients_phone_key")) {
+                sendError(exchange, "Số điện thoại này đã được sử dụng cho một bệnh nhân khác. Vui lòng kiểm tra lại.", 400);
+            } else if (msg != null && msg.contains("patients_insurance_code_key")) {
+                sendError(exchange, "Mã bảo hiểm y tế này đã tồn tại trên hệ thống.", 400);
+            } else {
+                sendError(exchange, "Lỗi cơ sở dữ liệu: " + msg, 500);
+            }
         } catch (Exception e) {
             sendError(exchange, e.getMessage(), 500);
         }

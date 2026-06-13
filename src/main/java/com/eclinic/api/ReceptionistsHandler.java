@@ -44,17 +44,18 @@ public class ReceptionistsHandler extends BaseHandler {
                 String username = extractString(body, "username");
                 String password = extractString(body, "password");
                 String fullName = extractString(body, "fullName");
+                String department = extractString(body, "department");
                 String phone = extractString(body, "phone");
                 String email = extractString(body, "email");
 
-                if (fullName.length() == 0 || phone.length() == 0) {
+                if (fullName.length() == 0 || phone.length() == 0 ) {
                     sendError(exchange, "Invalid receptionist payload", 400);
                     return;
                 }
 
-                long userId = resolveOrCreateReceptionistUserId(requestedUserId, username, password, fullName, email);
+                long userId = resolveOrCreateReceptionistUserId(requestedUserId, username, password, fullName, department, email);
 
-                long id = dao.create(userId, fullName, phone, email);
+                long id = dao.create(userId, fullName, department, phone, email);
                 String json = "{\"id\": " + id + ", \"status\": \"created\"}";
                 sendJson(exchange, json, 201);
             } else if ("PUT".equals(method)) {
@@ -63,6 +64,7 @@ public class ReceptionistsHandler extends BaseHandler {
                 String username = extractString(body, "username");
                 String password = extractString(body, "password");
                 String fullName = extractString(body, "fullName");
+                String department = extractString(body, "department");
                 String email = extractString(body, "email");
                 String phone = extractString(body, "phone");
 
@@ -73,7 +75,7 @@ public class ReceptionistsHandler extends BaseHandler {
                     return;
                 }
 
-                boolean updated = daoLocal.update(id, fullName, email, phone);
+                boolean updated = daoLocal.update(id, fullName, department, email, phone);
                 if (!updated) {
                     sendError(exchange, "Failed to update receptionist", 500);
                     return;
@@ -117,6 +119,7 @@ public class ReceptionistsHandler extends BaseHandler {
             "\"userId\": " + r.getUserId() + ", " +
             "\"username\": \"" + escapeJson(r.getUsername()) + "\", " +
             "\"fullName\": \"" + escapeJson(r.getFullName()) + "\", " +
+            "\"department\": \"" + escapeJson(r.getDepartment()) + "\", " +
             "\"phone\": \"" + escapeJson(r.getPhone()) + "\", " +
             "\"email\": \"" + escapeJson(r.getEmail()) + "\", " +
             "\"createdAt\": \"" + escapeJson(r.getCreatedAt()) + "\"" +
@@ -159,7 +162,7 @@ public class ReceptionistsHandler extends BaseHandler {
         }
     }
 
-    private long resolveOrCreateReceptionistUserId(Long requestedUserId, String username, String password, String fullName, String email) throws Exception {
+    private long resolveOrCreateReceptionistUserId(Long requestedUserId, String username, String password, String fullName, String department, String email) throws Exception {
         UserDAO userDAO = new UserDAO();
 
         if (requestedUserId != null && requestedUserId.longValue() > 0) {
@@ -200,13 +203,17 @@ public class ReceptionistsHandler extends BaseHandler {
     }
 
     private String extractString(String json, String key) {
-        String search = "\"" + key + "\":\"";
-        int idx = json.indexOf(search);
-        if (idx == -1) return "";
-        int start = idx + search.length();
-        int end = json.indexOf("\"", start);
-        return json.substring(start, end);
-    }
+    String search = "\"" + key + "\"";
+    int idx = json.indexOf(search);
+    if (idx == -1) return "";
+    int colon = json.indexOf(":", idx + search.length());
+    if (colon == -1) return "";
+    int quote1 = json.indexOf("\"", colon + 1);
+    if (quote1 == -1) return "";
+    int quote2 = json.indexOf("\"", quote1 + 1);
+    if (quote2 == -1) return "";
+    return json.substring(quote1 + 1, quote2);
+}
 
     private boolean isBlank(String value) {
         return value == null || value.trim().length() == 0;

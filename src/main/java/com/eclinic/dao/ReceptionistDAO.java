@@ -11,15 +11,16 @@ import java.util.List;
 
 public class ReceptionistDAO {
 
-    public long create(long userId, String fullName, String phone, String email) throws SQLException {
-        String sql = "INSERT INTO receptionists (user_id, full_name, phone, email) VALUES (?, ?, ?, ?) RETURNING id";
+    public long create(long userId, String fullName, String department, String phone, String email) throws SQLException {
+        String sql = "INSERT INTO receptionists (user_id, full_name, department, phone, email) VALUES (?, ?, ?, ?, ?) RETURNING id";
         Connection conn = ConnectionManager.getConnection();
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setLong(1, userId);
             stmt.setString(2, fullName);
-            stmt.setString(3, phone);
-            stmt.setString(4, email);
+            stmt.setString(3, department);
+            stmt.setString(4, phone);
+            stmt.setString(5, email);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getLong(1);
@@ -31,7 +32,7 @@ public class ReceptionistDAO {
     }
 
     public Receptionist findById(long id) throws SQLException {
-        String sql = "SELECT r.id, r.user_id, u.username, r.full_name, r.phone, r.email, r.created_at FROM receptionists r LEFT JOIN users u ON r.user_id = u.id WHERE r.id = ?";
+        String sql = "SELECT r.id, r.user_id, u.username, r.full_name, r.department, r.phone, r.email, r.created_at FROM receptionists r LEFT JOIN users u ON r.user_id = u.id WHERE r.id = ?";
         Connection conn = ConnectionManager.getConnection();
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -43,6 +44,7 @@ public class ReceptionistDAO {
                     rs.getLong("user_id"),
                     rs.getString("username"),
                     rs.getString("full_name"),
+                    rs.getString("department"),
                     rs.getString("phone"),
                     rs.getString("email"),
                     null,  // password is not stored in receptionists table
@@ -56,7 +58,7 @@ public class ReceptionistDAO {
     }
 
     public List findAll() throws SQLException {
-        String sql = "SELECT r.id, r.user_id, u.username, r.full_name, r.phone, r.email, r.created_at FROM receptionists r LEFT JOIN users u ON r.user_id = u.id";
+        String sql = "SELECT r.id, r.user_id, u.username, r.full_name, r.department, r.phone, r.email, r.created_at FROM receptionists r LEFT JOIN users u ON r.user_id = u.id";
         Connection conn = ConnectionManager.getConnection();
         List receptionists = new ArrayList();
         try {
@@ -68,6 +70,7 @@ public class ReceptionistDAO {
                     rs.getLong("user_id"),
                     rs.getString("username"),
                     rs.getString("full_name"),
+                    rs.getString("department"),
                     rs.getString("phone"),
                     rs.getString("email"),
                     null,  // password is not stored in receptionists table
@@ -80,15 +83,16 @@ public class ReceptionistDAO {
         }
     }
 
-    public boolean update(long id, String fullName, String email, String phone) throws SQLException {
-        String sql = "UPDATE receptionists SET full_name = ?, email = ?, phone = ? WHERE id = ?";
+    public boolean update(long id, String fullName, String department, String email, String phone) throws SQLException {
+        String sql = "UPDATE receptionists SET full_name = ?, department = ?, email = ?, phone = ? WHERE id = ?";
         Connection conn = ConnectionManager.getConnection();
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, fullName);
-            stmt.setString(2, email);
-            stmt.setString(3, phone);
-            stmt.setLong(4, id);
+            stmt.setString(2, department);
+            stmt.setString(3, email);
+            stmt.setString(4, phone);
+            stmt.setLong(5, id);
             int rows = stmt.executeUpdate();
             return rows > 0;
         } finally {

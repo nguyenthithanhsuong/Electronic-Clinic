@@ -5,16 +5,18 @@ public class Receptionist {
     private long userId;
     private String username;
     private String fullName;
+    private String department;
     private String phone;
     private String email;
     private String password;
     private String createdAt;
 
-    public Receptionist(long id, long userId, String username, String fullName, String phone, String email, String password, String createdAt) {
+    public Receptionist(long id, long userId, String username, String fullName, String department, String phone, String email, String password, String createdAt) {
         this.id = id;
         this.userId = userId;
         this.username = username;
         this.fullName = fullName;
+        this.department = department;
         this.phone = phone;
         this.email = email;
         this.password = password;
@@ -35,6 +37,9 @@ public class Receptionist {
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
 
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
@@ -53,6 +58,7 @@ public class Receptionist {
                 ", userId=" + userId +
                 ", username='" + username + '\'' +
                 ", fullName='" + fullName + '\'' +
+                ", department='" + department + '\'' +
                 ", phone='" + phone + '\'' +
                 ", email='" + email + '\'' +
                 '}';
